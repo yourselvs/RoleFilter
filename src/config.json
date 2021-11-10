@@ -1,0 +1,19 @@
+{
+    "info": {
+        "name": "Role Filter",
+        "authors": [{
+            "name": "yourselvs",
+            "discord_id": "110574243023966208",
+            "github_username": "yourselvs",
+            "twitter_username": ""
+        }],
+        "version": "0.0.1",
+        "description": "Filter the user list by selected roles.",
+        "github": "https://github.com/yourselvs/RoleFilter",
+        "github_raw": ""
+    },
+    "changelog": [
+        {"title": "Building the plugin", "type": "progress", "items": ["Creating user list filter", "Developing filter interactions"]}
+    ],
+    "main": "index.js"
+}
