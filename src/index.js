@@ -1,5 +1,5 @@
 module.exports = (Plugin, Library) => {
-    const {DiscordModules, DiscordSelectors, Logger, Patcher, ReactTools, Toasts, Utilities, WebpackModules} = Library;
+    const {DiscordClasses, DiscordModules, DiscordSelectors, DOMTools, Logger, Patcher, ReactTools, Toasts, Utilities, WebpackModules} = Library;
 
     const GuildStore = DiscordModules.GuildStore;
     const GuildMemberStore = DiscordModules.GuildMemberStore;
@@ -12,6 +12,8 @@ module.exports = (Plugin, Library) => {
             super();
 
             this.guildId = "";
+            this.roleName = null;
+            this.roleStyle = "";
             this.usersAllowed = null;
             this.linkRole = this.linkRole.bind(this);
         }
@@ -42,6 +44,12 @@ module.exports = (Plugin, Library) => {
             Toasts.info(`${this.name} ${this.version} has stopped!`);
         }
 
+        resetFilter() {
+            this.guildId = "";
+            this.usersAllowed = null;
+            this.updateMemberList();
+        }
+
         async patchGuilds() {
             const GuildsList = await new Promise((resolve) => {
                 const guildsWrapper = document.querySelector(`.${Guilds.wrapper.replace(/\s/, '.')}`);
@@ -67,9 +75,7 @@ module.exports = (Plugin, Library) => {
             
             Patcher.after(GuildsList, 'render', (that, props, value) => {
                 if (this.guildId != BdApi.findModuleByProps('getLastSelectedGuildId').getLastSelectedGuildId()) {
-                    this.guildId = "";
-                    this.usersAllowed = "";
-                    this.updateMemberList();
+                    this.resetFilter();
                 }
 
                 return value;
@@ -81,22 +87,36 @@ module.exports = (Plugin, Library) => {
                 const [props] = args;
                 if (!this.usersAllowed || !Array.isArray(this.usersAllowed) || !this.usersAllowed.length) return value;
                 if (!props || !props['data-list-id'] || !props['data-list-id'].startsWith('members')) return value;
+                
+                const rootClass = DiscordClasses.PopoutRoles.root.value,
+                    roleClass = DiscordClasses.PopoutRoles.role.value + " bodyInnerWrapper-26fQXj roleFilter",
+                    roleCircleClass = DiscordClasses.PopoutRoles.roleCircle.value + " roleFilter",
+                    roleNameClass = DiscordClasses.PopoutRoles.roleName.value + " roleFilter";
 
-                if (props.guildId) {
-                    Logger.log("guildId found: ", guildId);
-                    
-                    if (props.guildId != this.guildId) {
-                        this.guildId = "";
-                        this.usersAllowed = null;
+                const membersChild = value.props.children;
 
-                        this.updateMemberList();
-                    }
-                }
+                // yeah i know this is ugly
+                const newReactElem = ReactTools.createWrappedElement(DOMTools.createElement(
+                `<div class="${rootClass}" style="padding: 24px 8px 0 16px">` +
+                    `<div class="${roleClass}">` +
+                        `<div class="${roleCircleClass}" style="${this.roleStyle}"></div>` +
+                        `<div class="${roleNameClass}">` +
+                            `${this.roleName}` +
+                        "</div>" +
+                    "</div>" + 
+                "</div>"));
 
+                value.props.children = [
+                    newReactElem,
+                    membersChild
+                ];
+
+                const classesRef = DiscordClasses;
+                
                 const target = Array.isArray(value)
                     ? value.find((i) => i && !i.key)
                     : value;
-                const childProps = this.getProps(target, 'props.children.props.children.props');
+                const childProps = this.getProps(target.props.children[1], 'props.children.props');
                 if (!childProps) return value;
                 const children = this.getProps(childProps, 'children');
                 if (!children || !Array.isArray(children)) return value;
@@ -148,23 +168,31 @@ module.exports = (Plugin, Library) => {
 
         linkRole({ target }) {
             let roleName = "";
+            let roleStyle = "";
 
             if(!this.guildId) {
                 return;
             } 
             else if (target.classList.contains("role-2irmRk")) {
                 roleName = target.children[1].innerText;
+                roleStyle = target.children[0].style.backgroundColor;
             }
             else if (target.classList.contains("roleName-32vpEy")) {
                 roleName = target.innerText;
+                roleStyle = target.previousElementSibling.style.backgroundColor;
             }
             else if (target.classList.contains("roleCircle-3xAZ1j")) {
                 roleName = target.nextSibling.innerText;
+                roleStyle = target.style.backgroundColor
             }
             else {
                 return;
             }
 
+            if (target.classList.contains("roleFilter")) {
+                this.resetFilter();
+            }
+            
             const rolesObj = GuildStore.getGuild(this.guildId).roles;
 
             const roleIds = [];
@@ -182,6 +210,9 @@ module.exports = (Plugin, Library) => {
                         roleIds.includes(roleId)
                     )
                 );
+
+            this.roleName = roleName;
+            this.roleStyle = "background-color:" + roleStyle
             
             Toasts.success(`Clicked on role: "${roleName}". Members found: ${members.length}`);
             Logger.info("Clicked on role:", roleName , ". Role ids found:", roleIds, ". Members found:", members);
