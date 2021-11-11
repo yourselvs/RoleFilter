@@ -4,7 +4,7 @@ Click on a role inside a user's popout menu to filter the online user's list to 
 
 ### Installation
 1. Download [BetterDiscord](https://betterdiscord.app/)
-2. Download the plugin file `releases/RoleFilter.plugin.js`
+2. Download the plugin file `release/RoleFilter.plugin.js`
 3. Place the plugin file in your plugins folder (See BD's [FAQ](https://betterdiscord.app/FAQ))
 
 ### TODO
