@@ -10,7 +10,7 @@
         "version": "0.0.1",
         "description": "Filter the user list by selected roles.",
         "github": "https://github.com/yourselvs/RoleFilter",
-        "github_raw": ""
+        "github_raw": "https://github.com/yourselvs/RoleFilter/blob/main/release/RoleFilter.plugin.js"
     },
     "changelog": [
         {"title": "Building the plugin", "type": "progress", "items": ["Creating user list filter", "Developing filter interactions"]}
