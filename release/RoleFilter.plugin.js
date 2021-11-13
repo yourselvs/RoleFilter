@@ -56,13 +56,114 @@ module.exports = (() => {
         stop() {}
     } : (([Plugin, Api]) => {
         const plugin = (Plugin, Library) => {
-    const {DiscordClasses, DiscordModules, DiscordSelectors, DOMTools, Logger, Patcher, ReactTools, Toasts, Utilities, WebpackModules} = Library;
+    const {DiscordClasses, DiscordModules, DiscordSelectors, DOMTools, Logger, Patcher, Popouts, ReactTools, Toasts, Utilities, WebpackModules} = Library;
 
-    const GuildStore = DiscordModules.GuildStore;
-    const GuildMemberStore = DiscordModules.GuildMemberStore;
+    const {GuildStore, GuildMemberStore, ImageResolver, React, UserStore } = DiscordModules;
 
     const Lists = WebpackModules.getByProps('ListThin');
     const Guilds = WebpackModules.getByProps('wrapper', 'unreadMentionsIndicatorTop');
+
+    const rootClass = DiscordClasses.PopoutRoles.root.value,
+        roleClass = DiscordClasses.PopoutRoles.role.value + " bodyInnerWrapper-26fQXj interactive roleFilter",
+        roleCircleClass = DiscordClasses.PopoutRoles.roleCircle.value + " roleFilter",
+        roleNameClass = DiscordClasses.PopoutRoles.roleName.value + " roleFilter",
+        memberClass = " member-3-YXUe container-2Pjhx-",
+        memberLayoutClass = " layout-2DM8Md",
+        avatarWrapperDivClass = "avatar-3uk_u9",
+        avatarWrapperClass = "wrapper-3t9DeA",
+        maskClass = "mask-1l8v16 svg-2V3M55",
+        avatarStackClass = "avatarStack-2Dr8S9",
+        avatarClass = "avatar-VxgULZ",
+        pointerEventsClass = "pointerEvents-2zdfdO",
+        contentClass = "content-3QAtGj",
+        nameAndDecoratorsClass = "nameAndDecorators-5FJ2dg",
+        nameClass = "name-uJV0GL",
+        roleColorClass = "roleColor-rz2vM0 desaturateUserColors-1gar-1";
+
+
+    const Role = class Role extends React.Component {
+        constructor(props) {
+            super(props);
+            this.onClick = this.onClick.bind(this);
+        }
+        
+        onClick() {
+            this.props.onClick();
+        }
+
+        render() {
+            return React.createElement('div', {
+                className: rootClass,
+                style: {
+                    padding: "24px 8px 0px 16px"
+                }
+            },
+                React.createElement('div', {
+                    className: roleClass,
+                    onClick: this.onClick
+                },
+                    React.createElement('div', {
+                        className: roleCircleClass,
+                        style: {backgroundColor: this.props.color}
+                    }),
+                    React.createElement('div', {className: roleNameClass},
+                        this.props.name
+                    )
+                )
+            )
+        }
+    }
+
+    const User = class User extends React.Component {
+        constructor(props) {
+            super(props);
+        }
+
+        render() {
+            return React.createElement('div', {
+                className: memberClass
+            },
+                React.createElement('div', {className: memberLayoutClass},
+                    React.createElement('div', {className: avatarWrapperDivClass}, 
+                        React.createElement('div', {
+                            className: avatarWrapperClass,
+                            role: "img",
+                            style: {width: "32px", height: "32px"}
+                        },
+                            React.createElement('svg', {
+                                className: maskClass,
+                                width: "40", height: "32", viewBox: "0 0 40 32"
+                            },
+                                React.createElement('foreignObject', {
+                                    x: "0", y: "0", width: "32", height: "32", 
+                                    clipPath: "circle(16px at center)"
+                                }, 
+                                    React.createElement('div', {className: avatarStackClass},
+                                        React.createElement('img', {
+                                            className: avatarClass,
+                                            src: ImageResolver.getUserAvatarURL(this.props.user)
+                                        })
+                                    )
+                                )
+                            )
+                        )
+                    ),
+                    React.createElement('div', {className: contentClass},
+                        React.createElement('div', {className: nameAndDecoratorsClass},
+                            React.createElement('div', {className: nameClass},
+                                React.createElement('span', {
+                                    className: roleColorClass,
+                                    style: {color: this.props.color}
+                                },
+                                    this.props.username
+                                )
+                            )
+                        )
+                    )
+                )
+            );
+        }
+    }
 
     return class RoleFilter extends Plugin {
         constructor() {
@@ -72,7 +173,8 @@ module.exports = (() => {
             this.roleName = null;
             this.roleStyle = "";
             this.usersAllowed = null;
-            this.linkRole = this.linkRole.bind(this);
+            this.handleRoleClick = this.handleRoleClick.bind(this);
+            this.resetFilter = this.resetFilter.bind(this);
         }
         
         onStart() {
@@ -80,7 +182,7 @@ module.exports = (() => {
             this.patchGuilds();
             this.patchMemberList();
 
-            document.addEventListener("click", this.linkRole, true);
+            document.addEventListener("click", this.handleRoleClick, true);
             
             Toasts.info(`${this.name} ${this.version} has started!`);
         }
@@ -92,7 +194,7 @@ module.exports = (() => {
                 roleModule.role = roleModule.role.replace(" interactive","");
             }
 
-            document.removeEventListener.bind(document, "click", this.linkRole, true);
+            document.removeEventListener.bind(document, "click", this.handleRoleClick, true);
             
             Patcher.unpatchAll();
 
@@ -115,7 +217,7 @@ module.exports = (() => {
                 const forwarded = Utilities.findInTree(instance, (tree) => {
                     if (!tree) return false;
                     const forward = String(tree['$$typeof']).includes('react.forward_ref');
-                    const string = tree.render?.toString().includes('ltr');
+                    const string = tree.render && tree.render.toString().includes('ltr');
                     return forward && string;
                 }, {
                     walkable: [
@@ -144,31 +246,21 @@ module.exports = (() => {
                 const [props] = args;
                 if (!this.usersAllowed || !Array.isArray(this.usersAllowed) || !this.usersAllowed.length) return value;
                 if (!props || !props['data-list-id'] || !props['data-list-id'].startsWith('members')) return value;
-                
-                const rootClass = DiscordClasses.PopoutRoles.root.value,
-                    roleClass = DiscordClasses.PopoutRoles.role.value + " bodyInnerWrapper-26fQXj roleFilter",
-                    roleCircleClass = DiscordClasses.PopoutRoles.roleCircle.value + " roleFilter",
-                    roleNameClass = DiscordClasses.PopoutRoles.roleName.value + " roleFilter";
 
                 const membersChild = value.props.children;
-
-                // yeah i know this is ugly
-                const newReactElem = ReactTools.createWrappedElement(DOMTools.createElement(
-                `<div class="${rootClass}" style="padding: 24px 8px 0 16px">` +
-                    `<div class="${roleClass}">` +
-                        `<div class="${roleCircleClass}" style="${this.roleStyle}"></div>` +
-                        `<div class="${roleNameClass}">` +
-                            `${this.roleName}` +
-                        "</div>" +
-                    "</div>" + 
-                "</div>"));
+                
+                const roleReactElem = React.createElement(Role, {
+                    color: this.roleStyle,
+                    name: this.roleName,
+                    onClick: this.resetFilter
+                });
 
                 value.props.children = [
-                    newReactElem,
+                    roleReactElem,
                     membersChild
                 ];
 
-                const classesRef = DiscordClasses;
+                const usersFound = [];
                 
                 const target = Array.isArray(value)
                     ? value.find((i) => i && !i.key)
@@ -182,7 +274,11 @@ module.exports = (() => {
                 childProps.children = children.filter((user) => {
                     if (!user.key || !user.key.startsWith('member')) return true;
                     const { 1: id } = user.key.split('-');
-                    return this.usersAllowed.map(user => user.userId).includes(id);
+                    const userAllowed = this.usersAllowed.map(user => user.userId).includes(id);
+                    
+                    userAllowed && usersFound.push(id);
+
+                    return userAllowed;
                 }).map((entry, i, arr) => {
                     // hide groups with no users under them
                     if (!entry) return null;
@@ -193,6 +289,23 @@ module.exports = (() => {
                     if (key.startsWith('section-') && bool) return null;
                     return entry;
                 });
+
+                for (var member of this.usersAllowed) {
+                    if (usersFound.includes(member.userId)) {
+                        continue;
+                    }
+
+                    const user = UserStore.getUser(member.userId);
+
+                    const userElement = React.createElement(User, {
+                        user: user,
+                        username: member.nick ? member.nick : user.username,
+                        color: member.colorString
+                    });
+
+                    childProps.children.push(userElement);
+                }
+
 
                 return value;
             });
@@ -210,12 +323,12 @@ module.exports = (() => {
 
         patchRoles() {
             const roleModule = WebpackModules.getByProps("role")
-            
+
             if(!roleModule.role.includes("interactive")) {
                 roleModule.role += " interactive"
             }
             
-            const RoleObj = WebpackModules.getModule(m => m?.default.displayName === 'UserPopoutBody');
+            const RoleObj = WebpackModules.getModule(m => m && m.default.displayName === 'UserPopoutBody');
             Patcher.after(RoleObj, "default",  (_, [props], component) => {
                 if (!component || !component.props || !component.props.className) return;
 
@@ -223,11 +336,11 @@ module.exports = (() => {
             });
         }
 
-        linkRole({ target }) {
+        handleRoleClick({ target }) {
             let roleName = "";
             let roleStyle = "";
 
-            if(!this.guildId) {
+            if(!this.guildId || target.classList.contains("roleFilter")) {
                 return;
             } 
             else if (target.classList.contains("role-2irmRk")) {
@@ -244,10 +357,6 @@ module.exports = (() => {
             }
             else {
                 return;
-            }
-
-            if (target.classList.contains("roleFilter")) {
-                this.resetFilter();
             }
             
             const rolesObj = GuildStore.getGuild(this.guildId).roles;
@@ -269,7 +378,7 @@ module.exports = (() => {
                 );
 
             this.roleName = roleName;
-            this.roleStyle = "background-color:" + roleStyle
+            this.roleStyle = roleStyle;
             
             Toasts.success(`Clicked on role: "${roleName}". Members found: ${members.length}`);
             Logger.info("Clicked on role:", roleName , ". Role ids found:", roleIds, ". Members found:", members);
