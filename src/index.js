@@ -9,19 +9,7 @@ module.exports = (Plugin, Library) => {
     const rootClass = DiscordClasses.PopoutRoles.root.value,
         roleClass = DiscordClasses.PopoutRoles.role.value + " bodyInnerWrapper-26fQXj interactive roleFilter",
         roleCircleClass = DiscordClasses.PopoutRoles.roleCircle.value + " roleFilter",
-        roleNameClass = DiscordClasses.PopoutRoles.roleName.value + " roleFilter",
-        memberClass = " member-3-YXUe container-2Pjhx-",
-        memberLayoutClass = " layout-2DM8Md",
-        avatarWrapperDivClass = "avatar-3uk_u9",
-        avatarWrapperClass = "wrapper-3t9DeA",
-        maskClass = "mask-1l8v16 svg-2V3M55",
-        avatarStackClass = "avatarStack-2Dr8S9",
-        avatarClass = "avatar-VxgULZ",
-        pointerEventsClass = "pointerEvents-2zdfdO",
-        contentClass = "content-3QAtGj",
-        nameAndDecoratorsClass = "nameAndDecorators-5FJ2dg",
-        nameClass = "name-uJV0GL",
-        roleColorClass = "roleColor-rz2vM0 desaturateUserColors-1gar-1";
+        roleNameClass = DiscordClasses.PopoutRoles.roleName.value + " roleFilter";
 
 
     const Role = class Role extends React.Component {
@@ -37,12 +25,11 @@ module.exports = (Plugin, Library) => {
         render() {
             return React.createElement('div', {
                 className: rootClass,
-                style: {
-                    padding: "24px 8px 0px 16px"
-                }
+                style: {padding: "24px 8px 0px 16px"}
             },
                 React.createElement('div', {
                     className: roleClass,
+                    style: {overflow: "auto"},
                     onClick: this.onClick
                 },
                     React.createElement('div', {
@@ -57,54 +44,82 @@ module.exports = (Plugin, Library) => {
         }
     }
 
-    const User = class User extends React.Component {
-        constructor(props) {
-            super(props);
+    const Channel = class Channel {
+        constructor(channelId, guildId, rows) {
+            this.channelId = channelId;
+            this.guildId = guildId;
+            this.rows = rows;
         }
 
-        render() {
-            return React.createElement('div', {
-                className: memberClass
-            },
-                React.createElement('div', {className: memberLayoutClass},
-                    React.createElement('div', {className: avatarWrapperDivClass}, 
-                        React.createElement('div', {
-                            className: avatarWrapperClass,
-                            role: "img",
-                            style: {width: "32px", height: "32px"}
-                        },
-                            React.createElement('svg', {
-                                className: maskClass,
-                                width: "40", height: "32", viewBox: "0 0 40 32"
-                            },
-                                React.createElement('foreignObject', {
-                                    x: "0", y: "0", width: "32", height: "32", 
-                                    clipPath: "circle(16px at center)"
-                                }, 
-                                    React.createElement('div', {className: avatarStackClass},
-                                        React.createElement('img', {
-                                            className: avatarClass,
-                                            src: ImageResolver.getUserAvatarURL(this.props.user)
-                                        })
-                                    )
-                                )
-                            )
-                        )
-                    ),
-                    React.createElement('div', {className: contentClass},
-                        React.createElement('div', {className: nameAndDecoratorsClass},
-                            React.createElement('div', {className: nameClass},
-                                React.createElement('span', {
-                                    className: roleColorClass,
-                                    style: {color: this.props.color}
-                                },
-                                    this.props.username
-                                )
-                            )
-                        )
-                    )
-                )
-            );
+        getMemberRows() {
+            return rows.filter(row => row.type ===  "MEMBER");
+        }
+
+        getRoleIds(roleName) {
+            const roles = GuildStore.getGuild(this.guildId).roles;
+
+            const roleIds = [];
+
+            for (const roleId in roles) {
+                const role = roles[roleId];
+                if(role.name && role.name === roleName) {
+                    roleIds.push(roleId);
+                }
+            }
+
+            return roleIds;
+        }
+
+        getMembersByRoleName(roleName) {
+            const roleIds = this.getRoleIds(roleName);
+
+            return this.getMembersByRoleIds(roleIds);
+        }
+
+        getMembersByRoleIds(roleIds) {
+            let maxIdx = -1, count = 0, currentId;
+            const groupList = {};
+            const filteredMembersList = this.rows.filter((member, idx) => {
+                // get rid of members not in role ID list
+                if (member.type != "MEMBER") return true;
+                
+                const memberAllowed = member.roles.some(roleId => roleIds.includes(roleId));
+                // keep track of highest index we've reached
+                if (memberAllowed) maxIdx = Math.max(maxIdx, idx);
+
+                return memberAllowed;
+            })
+            
+            const filteredGroupList = filteredMembersList.filter((group, idx, arr) => {
+                // construct list of groups that have members in them
+                if (group.type != "GROUP") {
+                    count = count + 1;
+
+                    // last group ends in a member and won't be counted without the following lnie
+                    if (!arr[idx + 1] && count > 0) groupList[currentId] = {count};
+
+                    return true;
+                }
+
+                if (group.id != currentId) {
+                    // found new group or are at end of list, add it to the list if there are members in it
+                    if (count > 0) groupList[currentId] = {count};
+
+                    currentId = group.id;
+                    count = 0;
+                }
+                
+                // filter out groups regardless
+                return false;
+            })
+            
+            const membersList = filteredGroupList.map(member => member.user.id); // return id, not member object
+
+            return {
+                maxIdx,
+                groupList,
+                membersList
+            }
         }
     }
 
@@ -112,10 +127,6 @@ module.exports = (Plugin, Library) => {
         constructor() {
             super();
 
-            this.guildId = "";
-            this.roleName = null;
-            this.roleStyle = "";
-            this.usersAllowed = null;
             this.handleRoleClick = this.handleRoleClick.bind(this);
             this.resetFilter = this.resetFilter.bind(this);
         }
@@ -126,8 +137,6 @@ module.exports = (Plugin, Library) => {
             this.patchMemberList();
 
             document.addEventListener("click", this.handleRoleClick, true);
-            
-            Toasts.info(`${this.name} ${this.version} has started!`);
         }
 
         onStop() {
@@ -142,13 +151,11 @@ module.exports = (Plugin, Library) => {
             Patcher.unpatchAll();
 
             this.updateMemberList();
-
-            Toasts.info(`${this.name} ${this.version} has stopped!`);
         }
 
         resetFilter() {
             this.guildId = "";
-            this.usersAllowed = null;
+            this.filter = null;
             this.updateMemberList();
         }
 
@@ -177,6 +184,7 @@ module.exports = (Plugin, Library) => {
             
             Patcher.after(GuildsList, 'render', (that, props, value) => {
                 if (this.guildId != BdApi.findModuleByProps('getLastSelectedGuildId').getLastSelectedGuildId()) {
+                    Logger.info("Server change detected.");
                     this.resetFilter();
                 }
 
@@ -187,14 +195,39 @@ module.exports = (Plugin, Library) => {
         patchMemberList() {
             Patcher.after(Lists.ListThin, 'render', (that, args, value) => {
                 const [props] = args;
-                if (!this.usersAllowed || !Array.isArray(this.usersAllowed) || !this.usersAllowed.length) return value;
-                if (!props || !props['data-list-id'] || !props['data-list-id'].startsWith('members')) return value;
+                
+                if (!props || !props['data-list-id'] 
+                    || !props['data-list-id'].startsWith('members')
+                    || !value.ref || !value.ref.current) return value;
+
+                const memberListContainer = ReactTools.getOwnerInstance(value.ref.current.parentElement)
+
+                this.patchMemberListContainer(value);
+
+                if (!this.channel || this.channel.id != memberListContainer.props.channel.id) {
+                    Logger.info("Channel change detected.");
+                    // if a channel object isn't created, or if the channel has changed, create new channel
+                    this.channel = new Channel(
+                        memberListContainer.props.channel.id,
+                        this.guildId,
+                        memberListContainer.props.rows
+                    );
+
+                    // if a filter has been applied, refresh the filter for new channel
+                    if (this.filter) {
+                        const roleIds = this.channel.getRoleIds(this.filter.roleName);
+
+                        this.filterByIds(roleIds, this.filter.roleName, this.filter.roleStyle);
+                    }
+                }
+
+                if (!this.filter) return value;
 
                 const membersChild = value.props.children;
                 
                 const roleReactElem = React.createElement(Role, {
-                    color: this.roleStyle,
-                    name: this.roleName,
+                    color: this.filter.roleStyle,
+                    name: this.filter.roleName,
                     onClick: this.resetFilter
                 });
 
@@ -203,65 +236,72 @@ module.exports = (Plugin, Library) => {
                     membersChild
                 ];
 
-                const usersFound = [];
-                
-                const target = Array.isArray(value)
-                    ? value.find((i) => i && !i.key)
-                    : value;
-                const childProps = this.getProps(target.props.children[1], 'props.children.props');
-                if (!childProps) return value;
-                const children = this.getProps(childProps, 'children');
-                if (!children || !Array.isArray(children)) return value;
-                if (!this.usersAllowed || !Array.isArray(this.usersAllowed) || !this.usersAllowed.length) return value;
-                
-                childProps.children = children.filter((user) => {
-                    if (!user.key || !user.key.startsWith('member')) return true;
-                    const { 1: id } = user.key.split('-');
-                    const userAllowed = this.usersAllowed.map(user => user.userId).includes(id);
-                    
-                    userAllowed && usersFound.push(id);
-
-                    return userAllowed;
-                }).map((entry, i, arr) => {
-                    // hide groups with no users under them
-                    if (!entry) return null;
-                    const { key } = entry;
-                    const next = arr[i + 1];
-                    const sect = (item) => item && item.key.startsWith('section-');
-                    const bool = sect(next);
-                    if (key.startsWith('section-') && bool) return null;
-                    return entry;
-                });
-
-                for (var member of this.usersAllowed) {
-                    if (usersFound.includes(member.userId)) {
-                        continue;
-                    }
-
-                    const user = UserStore.getUser(member.userId);
-
-                    const userElement = React.createElement(User, {
-                        user: user,
-                        username: member.nick ? member.nick : user.username,
-                        color: member.colorString
-                    });
-
-                    childProps.children.push(userElement);
-                }
-
-
                 return value;
             });
+        }
 
-            this.updateMemberList();
+        /**
+         * 
+         * @param {*} value represents the react element of the member list 
+         * @returns whether or not the container could be patched
+         */
+        patchMemberListContainer(value) {
+            const memberList = ReactTools.getOwnerInstance(value.ref.current.parentElement);
+            
+            Patcher.after(memberList, "renderRow", (that, args, value) => {
+                if (!this.filter || !this.filter.membersAllowed || !value || !value.props) return value;
+                if (!value.props.user) {
+                    Logger.log("got a problemo");
+                }
+                if (!this.filter.membersAllowed.includes(value.props.user.id)) return null;
+            });
+            Patcher.after(memberList, "renderSection", (that, args, value) => {
+                if (!this.filter || !this.filter.sectionsAllowed || !value || !value.props) return value;
+                
+                // first section will have children, rest wont
+                const props = !value.props.children ? value.props : value.props.children.props;
+
+                if (this.filter.sectionsAllowed[props.id]) 
+                    // count for each section needs to be manually updated
+                    props.count = this.filter.sectionsAllowed[props.id].count;
+                else return null;
+            });
         }
 
         updateMemberList() {
             const memberList = document.querySelector(DiscordSelectors.MemberList.members.value.trim());
             if (!memberList) return;
-            const owner = ReactTools.getOwnerInstance(memberList);
+            this.forceUpdate(memberList.parentElement);
+            this.forceUpdate(memberList);
+        }
+
+        forceUpdate(elem) {
+            const owner = ReactTools.getOwnerInstance(elem);
             owner.forceUpdate();
             if (owner.handleScroll) owner.handleScroll();
+        }
+
+        filterByIds(roleIds, roleName, roleStyle) {
+            const channelMembers = this.channel.getMembersByRoleIds(roleIds);
+            
+
+            this.filter = {
+                roleName: roleName,
+                roleStyle: roleStyle,
+                membersAllowed: channelMembers.membersList,
+                sectionsAllowed: channelMembers.groupList
+            }
+        }
+
+        filterByName(roleName, roleStyle) {
+            const channelMembers = this.channel.getMembersByRoleName(roleName);
+
+            this.filter = {
+                roleName: roleName,
+                roleStyle: roleStyle,
+                membersAllowed: channelMembers.membersList,
+                sectionsAllowed: channelMembers.groupList
+            }
         }
 
         patchRoles() {
@@ -276,6 +316,7 @@ module.exports = (Plugin, Library) => {
                 if (!component || !component.props || !component.props.className) return;
 
                 this.guildId = props.guild.id;
+                this.channel.guildId = props.guild.id;
             });
         }
 
@@ -301,36 +342,10 @@ module.exports = (Plugin, Library) => {
             else {
                 return;
             }
+
+            this.filterByName(roleName, roleStyle);
             
-            const rolesObj = GuildStore.getGuild(this.guildId).roles;
-
-            const roleIds = [];
-
-            for (const roleId in rolesObj) {
-                const role = rolesObj[roleId];
-                if(role.name && role.name === roleName) {
-                    roleIds.push(roleId);
-                }
-            }
-            
-            const members = GuildMemberStore.getMembers(this.guildId)
-                .filter(member => 
-                    member.roles.some(roleId => 
-                        roleIds.includes(roleId)
-                    )
-                );
-
-            this.roleName = roleName;
-            this.roleStyle = roleStyle;
-            
-            Toasts.success(`Clicked on role: "${roleName}". Members found: ${members.length}`);
-            Logger.info("Clicked on role:", roleName , ". Role ids found:", roleIds, ". Members found:", members);
-
-            if(roleIds.length > 1) {
-                Toasts.info(`Found ${roleIds.length} overlapping roles with the same name. All roles are included in the filtered member list.`);
-            }
-
-            this.usersAllowed = members;
+            Logger.info(`Clicked on role: "${roleName}". Members found: ${this.filter.membersAllowed.length}.`);
 
             this.updateMemberList();
         }

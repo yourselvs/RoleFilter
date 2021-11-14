@@ -14,4 +14,4 @@ Click on a role inside a user's popout menu to filter the online user's list to 
 - Filtering on multiple roles
 - Switch between AND/OR for multiple roles
 - Right click to filter a role out (instead of in, which is default behavior)
-- Improve functionality of manually created users
+- Scale height of member list to number of members so that everyone is rendered
