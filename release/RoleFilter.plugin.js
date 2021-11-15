@@ -56,9 +56,9 @@ module.exports = (() => {
         stop() {}
     } : (([Plugin, Api]) => {
         const plugin = (Plugin, Library) => {
-    const {DiscordClasses, DiscordModules, DiscordSelectors, DOMTools, Logger, Patcher, Popouts, ReactTools, Toasts, Utilities, WebpackModules} = Library;
+    const { DiscordClasses, DiscordModules, DiscordSelectors, Logger, Patcher, ReactTools, Utilities, WebpackModules } = Library;
 
-    const {GuildStore, GuildMemberStore, ImageResolver, React, UserStore } = DiscordModules;
+    const { GuildStore, React } = DiscordModules;
 
     const Lists = WebpackModules.getByProps('ListThin');
     const Guilds = WebpackModules.getByProps('wrapper', 'unreadMentionsIndicatorTop');
@@ -91,7 +91,10 @@ module.exports = (() => {
                 },
                     React.createElement('div', {
                         className: roleCircleClass,
-                        style: {backgroundColor: this.props.color}
+                        style: {
+                            backgroundColor: this.props.color,
+                            display: "inline-table"
+                        }
                     }),
                     React.createElement('div', {className: roleNameClass},
                         this.props.name
@@ -106,10 +109,6 @@ module.exports = (() => {
             this.channelId = channelId;
             this.guildId = guildId;
             this.rows = rows;
-        }
-
-        getMemberRows() {
-            return rows.filter(row => row.type ===  "MEMBER");
         }
 
         getRoleIds(roleName) {
