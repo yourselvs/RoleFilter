@@ -15,3 +15,5 @@ Click on a role inside a user's popout menu to filter the online user's list to 
 - Switch between AND/OR for multiple roles
 - Right click to filter a role out (instead of in, which is default behavior)
 - Scale height of member list to number of members so that everyone is rendered
+- Create setting to turn on/off resetting filter on channel change
+- Create setting on whether to display sections when filtering
