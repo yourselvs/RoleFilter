@@ -7,7 +7,7 @@
             "github_username": "yourselvs",
             "twitter_username": ""
         }],
-        "version": "0.1",
+        "version": "1.0.0",
         "description": "Filter the user list by selected roles.",
         "github": "https://github.com/yourselvs/RoleFilter",
         "github_raw": "https://github.com/yourselvs/RoleFilter/blob/main/release/RoleFilter.plugin.js"
