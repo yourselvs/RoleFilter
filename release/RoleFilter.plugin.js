@@ -32,7 +32,7 @@
 @else@*/
 
 module.exports = (() => {
-    const config = {"info":{"name":"Role Filter","authors":[{"name":"yourselvs","discord_id":"110574243023966208","github_username":"yourselvs","twitter_username":""}],"version":"0.0.1","description":"Filter the user list by selected roles.","github":"https://github.com/yourselvs/RoleFilter","github_raw":"https://github.com/yourselvs/RoleFilter/blob/main/release/RoleFilter.plugin.js"},"changelog":[{"title":"Building the plugin","type":"progress","items":["Creating user list filter","Developing filter interactions"]}],"main":"index.js"};
+    const config = {"info":{"name":"Role Filter","authors":[{"name":"yourselvs","discord_id":"110574243023966208","github_username":"yourselvs","twitter_username":""}],"version":"0.1","description":"Filter the user list by selected roles.","github":"https://github.com/yourselvs/RoleFilter","github_raw":"https://github.com/yourselvs/RoleFilter/blob/main/release/RoleFilter.plugin.js"},"changelog":[{"title":"Viewing offline members","type":"progress","items":["In a future update, there will be the ability to view offline members in a role for servers which have disabled it."]}],"main":"index.js"};
 
     return !global.ZeresPluginLibrary ? class {
         constructor() {this._config = config;}
@@ -232,6 +232,8 @@ module.exports = (() => {
                     Logger.info("Server change detected.");
                     this.resetFilter();
                 }
+
+                this.updateMemberList();
 
                 return value;
             });

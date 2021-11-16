@@ -176,6 +176,8 @@ module.exports = (Plugin, Library) => {
                     this.resetFilter();
                 }
 
+                this.updateMemberList();
+
                 return value;
             });
         }
