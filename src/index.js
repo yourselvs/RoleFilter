@@ -1,5 +1,5 @@
 module.exports = (Plugin, Library) => {
-    const { DiscordClasses, DiscordModules, DiscordSelectors, Logger, Patcher, ReactTools, Utilities, WebpackModules } = Library;
+    const { DiscordClasses, DiscordModules, DiscordSelectors, Logger, Patcher, PluginUtilities, ReactTools, Utilities, WebpackModules } = Library;
 
     const { GuildStore, React } = DiscordModules;
 
@@ -68,6 +68,7 @@ module.exports = (Plugin, Library) => {
         }
         
         onStart() {
+            this.initializeCss();
             this.patchRoles();
             this.patchGuilds();
             this.patchMemberList();
@@ -76,17 +77,32 @@ module.exports = (Plugin, Library) => {
         }
 
         onStop() {
-            const roleModule = WebpackModules.getByProps("role")
-            
-            if(roleModule.role.includes(" interactive")) {
-                roleModule.role = roleModule.role.replace(" interactive","");
-            }
 
             document.removeEventListener.bind(document, "click", this.handleRolePillClick, true);
             
             Patcher.unpatchAll();
 
             this.updateMemberList();
+            
+            const roleModule = WebpackModules.getByProps("role")
+            
+            if(roleModule.role.includes(" interactive")) {
+                roleModule.role = roleModule.role.replace(" interactive","");
+            }
+
+            if (this.elementToRevertCSS) this.revertFilterCss();
+
+            PluginUtilities.removeStyle("RoleFilterCSS");
+        }
+
+        /**
+         * Prevent the scrollbar from rendering while the filter is active
+         */
+        initializeCss() {
+            PluginUtilities.addStyle(
+                "RoleFilterCSS", 
+                ".roleFilterWrap::-webkit-scrollbar { display: none; }"
+            );
         }
 
         /**
@@ -157,7 +173,7 @@ module.exports = (Plugin, Library) => {
             Patcher.after(GuildsList, 'render', (that, props, value) => {
                 if (this.guildId != BdApi.findModuleByProps('getLastSelectedGuildId').getLastSelectedGuildId()) {
                     Logger.info("Server change detected.");
-                    this.handleRoleFilterClick();
+                    this.resetFilter();
                 }
 
                 return value;
@@ -190,13 +206,18 @@ module.exports = (Plugin, Library) => {
 
                     // if a filter has been applied, refresh the filter for new channel
                     if (this.filter) {
-                        this.filterByRoles(this.filter.roles);
+                        this.resetFilter();
                     }
                 }
 
                 // always insert the element, even when not filtering
                 // so that user popout does not close when clicking filter
-                if (value) this.insertRoleElem(value);                
+                if (value) this.insertRoleElem(value);
+
+                this.initializeHeightValues();
+                
+                if (this.filter) this.applyFilterCss(value.ref.current);
+                else if (this.elementToRevertCSS) this.revertFilterCss();
 
                 return value;
             });
@@ -224,6 +245,67 @@ module.exports = (Plugin, Library) => {
                     props.count = this.filter.sectionsAllowed[props.id].count;
                 else return null;
             });
+        }
+
+        initializeHeightValues() {
+            this.memberHeight = this.memberHeight || document.querySelector(".member-3-YXUe.container-2Pjhx-").offsetHeight;
+            this.sectionHeight = this.sectionHeight || document.querySelector(".membersGroup-v9BXpm.container-2ax-kl").offsetHeight;
+        }
+
+        /**
+         * Apply CSS to the elements which make up the members list.
+         * Allows all members to render and still be scrollable.
+         * @param {HTML element} element The members list HTML element
+         */
+        applyFilterCss(element) {
+            const filterElementHeight = element.children[0].offsetHeight,
+                totalMemberHeight = this.filter.membersFound * this.memberHeight,
+                totalSectionHeight = this.filter.sectionsFound * this.sectionHeight,
+                filteredMemberHeight = this.filter.membersAllowed.length * this.memberHeight,
+                filteredSectionHeight = Object.keys(this.filter.sectionsAllowed).length * this.sectionHeight,
+                // get the amount of padding there should be at the bottom of the list
+                bottomPadding = element.computedStyleMap().get("padding-bottom").value;
+
+            // set the list height so that all members are rendered
+            element.style.height = filterElementHeight + totalSectionHeight + totalMemberHeight + "px";
+            element.style.removeProperty("overflow");
+
+            const parentElement = element.parentElement;
+
+            // set the membersWrap height to the height that all members would be rendered AFTER filtering
+            parentElement.style.minHeight = filterElementHeight + filteredMemberHeight + filteredSectionHeight + bottomPadding + "px";
+            parentElement.style.overflow = "hidden"
+
+            const containerElement = parentElement.parentElement;
+
+            // set the container to scroll through the list
+            containerElement.style.overflowY = "scroll"
+            // hide the scrollbar
+            containerElement.classList.add("roleFilterWrap");
+
+            this.elementToRevertCSS = element;
+        }
+
+        /**
+         * Reverts all css adjustments made by applyFilterCss().
+         */
+        revertFilterCss() {
+            const element = this.elementToRevertCSS;
+
+            element.style.removeProperty("height");
+            element.style.overflow = "hidden scroll";
+
+            const parentElement = element.parentElement;
+
+            parentElement.style.removeProperty("min-height");
+            parentElement.style.removeProperty("overflow");
+
+            const containerElement = parentElement.parentElement;
+
+            containerElement.style.removeProperty("overflow-y");
+            containerElement.classList.remove("roleFilterWrap");
+
+            this.elementToRevertCSS = null;
         }
 
         /**
@@ -369,7 +451,9 @@ module.exports = (Plugin, Library) => {
             this.filter = {
                 roles,
                 membersAllowed: channelMembers.membersList,
-                sectionsAllowed: channelMembers.groupList
+                sectionsAllowed: channelMembers.groupList,
+                membersFound: channelMembers.membersFound,
+                sectionsFound: channelMembers.sectionsFound
             }
         }
 
@@ -404,7 +488,7 @@ module.exports = (Plugin, Library) => {
         /**
          * Handles all click events. 
          * Filters out event if target's classes don't match role classes.
-         * @param {HTML Element} target The element to handle the click event on
+         * @param {HTML element} target The element to handle the click event on
          */
         handleRolePillClick({ target }) {
             let roleName = "";

@@ -11,9 +11,8 @@ Click on a role inside a user's popout menu to filter the online user's list to 
 - ~~Display filter on the users list~~
 - ~~Improve appearance of filter display (role color, pill shape, total users?)~~
 - ~~**[X]** button to remove the filter~~ (keyboard shortcut too?)
-- Filtering on multiple roles
-- Switch between AND/OR for multiple roles
+- ~~Filtering on multiple roles~~
+- ~~Switch between AND/OR for multiple roles~~ **NOT PLANNED**
 - Right click to filter a role out (instead of in, which is default behavior)
-- Scale height of member list to number of members so that everyone is rendered
-- Create setting to turn on/off resetting filter on channel change
+- ~~Scale height of member list to number of members so that everyone is rendered~~
 - Create setting on whether to display sections when filtering
