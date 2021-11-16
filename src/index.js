@@ -72,6 +72,7 @@ module.exports = (Plugin, Library) => {
             this.patchRoles();
             this.patchGuilds();
             this.patchMemberList();
+            this.patchRoleMention();
 
             document.addEventListener("click", this.handleRolePillClick, true);
         }
@@ -93,6 +94,12 @@ module.exports = (Plugin, Library) => {
             if (this.elementToRevertCSS) this.revertFilterCss();
 
             PluginUtilities.removeStyle("RoleFilterCSS");
+        }
+
+        getGuildId() {
+            this.guildId = this.guildId || BdApi.findModuleByProps('getLastSelectedGuildId').getLastSelectedGuildId();
+
+            return this.guildId;
         }
 
         /**
@@ -134,13 +141,6 @@ module.exports = (Plugin, Library) => {
             if(!roleModule.role.includes("interactive")) {
                 roleModule.role += " interactive"
             }
-            
-            const RoleObj = WebpackModules.getModule(m => m && m.default.displayName === 'UserPopoutBody');
-            Patcher.after(RoleObj, "default",  (_, [props], component) => {
-                if (!component || !component.props || !component.props.className) return;
-
-                this.guildId = props.guild.id;
-            });
         }
 
         /**
@@ -171,7 +171,7 @@ module.exports = (Plugin, Library) => {
             if (!GuildsList) return;
             
             Patcher.after(GuildsList, 'render', (that, props, value) => {
-                if (this.guildId != BdApi.findModuleByProps('getLastSelectedGuildId').getLastSelectedGuildId()) {
+                if (this.getGuildId() != BdApi.findModuleByProps('getLastSelectedGuildId').getLastSelectedGuildId()) {
                     Logger.info("Server change detected.");
                     this.resetFilter();
                 }
@@ -220,6 +220,18 @@ module.exports = (Plugin, Library) => {
                 else if (this.elementToRevertCSS) this.revertFilterCss();
 
                 return value;
+            });
+        }
+
+        patchRoleMention() {
+            const RoleMention = WebpackModules.getModule(m => m?.default.displayName === "RoleMention");
+            
+            Patcher.after(RoleMention, "default", (_, [props], component) => {
+                if (!component || !component.props || !component.props.className ||
+                    !component.props.className.toLowerCase().includes("mention")) return;
+
+                component.props.className += " interactive";
+                component.props.onClick = (e) => this.filterByRoleName(component.props.children[0].slice(1));
             });
         }
 
@@ -412,7 +424,7 @@ module.exports = (Plugin, Library) => {
          * @returns {Role[]} List of roles that match the passed name
          */
         getRolesByName(roleName) {
-            const guildRoles = GuildStore.getGuild(this.guildId).roles;
+            const guildRoles = GuildStore.getGuild(this.getGuildId()).roles;
 
             const roles = [];
 
@@ -423,7 +435,7 @@ module.exports = (Plugin, Library) => {
                     roles.push(new Role(
                         guildRole.id,
                         guildRole.name,
-                        guildRole.colorString
+                        guildRole.colorString || "#b9bbbe"
                     ));
                 }
             }
@@ -440,6 +452,29 @@ module.exports = (Plugin, Library) => {
                 roles,
                 this.getAllowedMembers(roles, this.useAnd)
             );
+        }
+
+        /**
+         * Add roleName to the list of roles to filter by.
+         * @param {string} roleName 
+         */
+        filterByRoleName(roleName) {
+            const newRoles = this.getRolesByName(roleName);
+
+            if (this.filter) {
+                this.filter.roles = this.filter.roles.concat(
+                    // Don't add the role to the filter if it's already in there
+                    newRoles.filter(newRole => !this.filter.roles.some(role => role.id === newRole.id))
+                );
+                this.filterByRoles(this.filter.roles);
+            }
+            else
+                this.filterByRoles(newRoles);
+                
+            
+            Logger.info(`Clicked on role: "${roleName}". Members found:`, this.filter.membersAllowed);
+
+            this.updateMemberList();
         }
 
         /**
@@ -493,7 +528,7 @@ module.exports = (Plugin, Library) => {
         handleRolePillClick({ target }) {
             let roleName = "";
 
-            if(!this.guildId || target.classList.contains("roleFilter")) {
+            if(target.classList.contains("roleFilter")) {
                 return;
             } 
             else if (target.classList.contains("role-2irmRk")) {
@@ -509,22 +544,7 @@ module.exports = (Plugin, Library) => {
                 return;
             }
 
-            const newRoles = this.getRolesByName(roleName);            
-
-            if (this.filter) {
-                this.filter.roles = this.filter.roles.concat(
-                    // Don't add the role to the filter if it's already in there
-                    newRoles.filter(newRole => !this.filter.roles.some(role => role.id === newRole.id))
-                );
-                this.filterByRoles(this.filter.roles);
-            }
-            else
-                this.filterByRoles(newRoles);
-                
-            
-            Logger.info(`Clicked on role: "${roleName}". Members found:`, this.filter.membersAllowed);
-
-            this.updateMemberList();
+            this.filterByRoleName(roleName);
         }
         
         /**
