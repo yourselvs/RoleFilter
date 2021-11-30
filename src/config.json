@@ -7,13 +7,24 @@
             "github_username": "yourselvs",
             "twitter_username": ""
         }],
-        "version": "1.0.0",
+        "version": "1.0.1",
         "description": "Filter the user list by selected roles.",
         "github": "https://github.com/yourselvs/RoleFilter",
         "github_raw": "https://raw.githubusercontent.com/yourselvs/RoleFilter/main/release/RoleFilter.plugin.js"
     },
     "changelog": [
-        {"title": "Viewing offline members", "type": "progress", "items": ["In a future update, there will be the ability to view offline members in a role for servers which have disabled it."]}
+        {
+            "title": "Small adjustments",
+            "items": [
+                "Switching from DMs back to a server will reset the filter now",
+                "The filter cannot see more than 100 rows at a time due to some discord limitations. When trying to filter on a 100+ member channel, members past #100 will not be included. A warning will pop up explaining this."
+            ]
+        },
+        {
+            "title": "Viewing offline members", 
+            "type": "progress", 
+            "items": ["In a future update, there will be the ability to view offline members in a role for servers which have disabled it."]
+        }
     ],
     "main": "index.js"
 }
