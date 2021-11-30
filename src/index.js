@@ -1,10 +1,9 @@
 module.exports = (Plugin, Library) => {
-    const { DiscordClasses, DiscordModules, DiscordSelectors, Logger, Patcher, PluginUtilities, ReactTools, Utilities, WebpackModules } = Library;
+    const { DiscordClasses, DiscordModules, DiscordSelectors, Logger, Patcher, PluginUtilities, ReactTools, Toasts, WebpackModules } = Library;
 
     const { GuildStore, React } = DiscordModules;
 
     const Lists = WebpackModules.getByProps('ListThin');
-    const Guilds = WebpackModules.getByProps('wrapper', 'unreadMentionsIndicatorTop');
 
     const rootClass = DiscordClasses.PopoutRoles.root.value,
         roleClass = DiscordClasses.PopoutRoles.role.value + " bodyInnerWrapper-26fQXj interactive roleFilter",
@@ -70,7 +69,6 @@ module.exports = (Plugin, Library) => {
         onStart() {
             this.initializeCss();
             this.patchRoles();
-            this.patchGuilds();
             this.patchMemberList();
             this.patchRoleMention();
 
@@ -94,6 +92,11 @@ module.exports = (Plugin, Library) => {
             if (this.elementToRevertCSS) this.revertFilterCss();
 
             PluginUtilities.removeStyle("RoleFilterCSS");
+        }
+
+        onSwitch() {
+            this.resetFilter();
+            this.updateMemberList();
         }
 
         getGuildId() {
@@ -144,45 +147,6 @@ module.exports = (Plugin, Library) => {
         }
 
         /**
-         * Watches for changes in the guild ID. 
-         * @todo Rework this to find guild more cleanly
-         */
-        async patchGuilds() {
-            const GuildsList = await new Promise((resolve) => {
-                const guildsWrapper = document.querySelector(`.${Guilds.wrapper.replace(/\s/, '.')}`);
-                if (!guildsWrapper) return resolve(null);
-                const instance = ReactTools.getReactInstance(guildsWrapper);
-                const forwarded = Utilities.findInTree(instance, (tree) => {
-                    if (!tree) return false;
-                    const forward = String(tree['$$typeof']).includes('react.forward_ref');
-                    const string = tree.render && tree.render.toString().includes('ltr');
-                    return forward && string;
-                }, {
-                    walkable: [
-                        'type',
-                        'child',
-                        'sibling'
-                    ]
-                });
-                if (instance && forwarded) resolve(forwarded);
-                else resolve(null);
-            });
-
-            if (!GuildsList) return;
-            
-            Patcher.after(GuildsList, 'render', (that, props, value) => {
-                if (this.getGuildId() != BdApi.findModuleByProps('getLastSelectedGuildId').getLastSelectedGuildId()) {
-                    Logger.info("Server change detected.");
-                    this.resetFilter();
-                }
-
-                this.updateMemberList();
-
-                return value;
-            });
-        }
-
-        /**
          * Renders the role pill when filtering. Watches for channel changes.
          */
         patchMemberList() {
@@ -205,11 +169,6 @@ module.exports = (Plugin, Library) => {
                         memberListContainer.props.channel.id,
                         memberListContainer.props.rows
                     );
-
-                    // if a filter has been applied, refresh the filter for new channel
-                    if (this.filter) {
-                        this.resetFilter();
-                    }
                 }
 
                 // always insert the element, even when not filtering
@@ -245,7 +204,7 @@ module.exports = (Plugin, Library) => {
             const memberList = ReactTools.getOwnerInstance(memberListElem.ref.current.parentElement);
             
             Patcher.after(memberList, "renderRow", (that, args, value) => {
-                if (!this.filter || !this.filter.membersAllowed || !value || !value.props) return value;
+                if (!this.filter || !this.filter.membersAllowed || !value || !value.props || !value.props.user) return value;
                 if (!this.filter.membersAllowed.includes(value.props.user.id)) return null;
             });
             Patcher.after(memberList, "renderSection", (that, args, value) => {
@@ -363,6 +322,7 @@ module.exports = (Plugin, Library) => {
                 membersFound = 0,  membersCount = 0,
                 currentId;
             const groupList = {};
+
             const membersList = this.channel.rows.filter((member, idx) => {
                 // get rid of members not in role ID list
                 if (member.type != "MEMBER"){
@@ -410,6 +370,10 @@ module.exports = (Plugin, Library) => {
                 // filter out groups regardless
                 return false;
             }).map(member => member.user.id); // return id, not member object
+
+            if (this.channel.rows.length >= 100) {
+                Toasts.warning("This channel is large (approx. 100+ members). It's possible that not every member you're searching for will be found.");
+            }
 
             return {
                 maxIdx,

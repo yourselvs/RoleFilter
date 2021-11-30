@@ -21,8 +21,11 @@ Click on a role inside a user's popout menu to filter the online user's list to 
 - Create setting on whether to display sections when filtering
 - Display offline members in servers which have it disabled
     - Lock offline members display behind setting that has warning on it (they won't be clickable)
-- Test if utilizing `Patcher.instead` for `renderRow` and `renderSection` will improve rendering performance on massive servers
+- ~~Test if utilizing `Patcher.instead` for `renderRow` and `renderSection` will improve rendering performance on massive servers~~ 
+    - cant use it, can't get user id from arguments
+    - performance is fine on large servers anyway since past 100+ members things aren't rendered
 - Add scrollbar when filtering (currently doesn't exist)
+- ~~Display warning if 100+ users are present~~
 
 ## Contributing
 
