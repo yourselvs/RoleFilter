@@ -2,12 +2,12 @@
 
 Click on a role inside a user's popout menu to filter the online user's list to user's with that role.
 
-### Installation
+## Installation
 1. Download [BetterDiscord](https://betterdiscord.app/)
 2. Download the plugin file `release/RoleFilter.plugin.js`
 3. Place the plugin file in your plugins folder (See BD's [FAQ](https://betterdiscord.app/FAQ))
 
-### TODO
+## TODO
 - ~~Display filter on the users list~~
 - ~~Improve appearance of filter display (role color, pill shape, total users?)~~
 - ~~**[X]** button to remove the filter~~ (keyboard shortcut too?)
@@ -21,4 +21,9 @@ Click on a role inside a user's popout menu to filter the online user's list to 
 - Create setting on whether to display sections when filtering
 - Display offline members in servers which have it disabled
     - Lock offline members display behind setting that has warning on it (they won't be clickable)
-- Test if utilizing `Patcher.instead` will improve rendering performance on massive servers
+- Test if utilizing `Patcher.instead` for `renderRow` and `renderSection` will improve rendering performance on massive servers
+- Add scrollbar when filtering (currently doesn't exist)
+
+## Contributing
+
+Put a PR in. Please have readable code.

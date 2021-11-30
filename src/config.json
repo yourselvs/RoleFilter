@@ -10,7 +10,7 @@
         "version": "1.0.0",
         "description": "Filter the user list by selected roles.",
         "github": "https://github.com/yourselvs/RoleFilter",
-        "github_raw": "https://github.com/yourselvs/RoleFilter/blob/main/release/RoleFilter.plugin.js"
+        "github_raw": "https://raw.githubusercontent.com/yourselvs/RoleFilter/main/release/RoleFilter.plugin.js"
     },
     "changelog": [
         {"title": "Viewing offline members", "type": "progress", "items": ["In a future update, there will be the ability to view offline members in a role for servers which have disabled it."]}
