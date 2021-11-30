@@ -2,6 +2,7 @@
  * @name RoleFilter
  * @website https://github.com/yourselvs/RoleFilter
  * @source https://raw.githubusercontent.com/yourselvs/RoleFilter/main/release/RoleFilter.plugin.js
+ * @updateUrl https://raw.githubusercontent.com/yourselvs/RoleFilter/main/release/RoleFilter.plugin.js
  */
 /*@cc_on
 @if (@_jscript)
@@ -52,12 +53,11 @@ module.exports = (() => {
         stop() {}
     } : (([Plugin, Api]) => {
         const plugin = (Plugin, Library) => {
-    const { DiscordClasses, DiscordModules, DiscordSelectors, Logger, Patcher, PluginUtilities, ReactTools, Utilities, WebpackModules } = Library;
+    const { DiscordClasses, DiscordModules, DiscordSelectors, Logger, Patcher, PluginUtilities, ReactTools, Toasts, WebpackModules } = Library;
 
     const { GuildStore, React } = DiscordModules;
 
     const Lists = WebpackModules.getByProps('ListThin');
-    const Guilds = WebpackModules.getByProps('wrapper', 'unreadMentionsIndicatorTop');
 
     const rootClass = DiscordClasses.PopoutRoles.root.value,
         roleClass = DiscordClasses.PopoutRoles.role.value + " bodyInnerWrapper-26fQXj interactive roleFilter",
@@ -376,6 +376,7 @@ module.exports = (() => {
                 membersFound = 0,  membersCount = 0,
                 currentId;
             const groupList = {};
+
             const membersList = this.channel.rows.filter((member, idx) => {
                 // get rid of members not in role ID list
                 if (member.type != "MEMBER"){
