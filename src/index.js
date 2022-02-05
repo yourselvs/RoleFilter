@@ -1,12 +1,13 @@
 module.exports = (Plugin, Library) => {
-    const { DiscordClasses, DiscordModules, DiscordSelectors, Logger, Patcher, PluginUtilities, ReactTools, Toasts, WebpackModules } = Library;
+    const { DiscordClasses, DiscordClassModules, DiscordModules, DiscordSelectors, Logger, Patcher, PluginUtilities, ReactTools, Toasts, WebpackModules } = Library;
 
     const { GuildStore, React } = DiscordModules;
 
     const Lists = WebpackModules.getByProps('ListThin');
 
     const rootClass = DiscordClasses.PopoutRoles.root.value,
-        roleClass = DiscordClasses.PopoutRoles.role.value + " bodyInnerWrapper-26fQXj interactive roleFilter",
+        bodyInnerWrapperClass = WebpackModules.getByProps("bodyInnerWrapper").bodyInnerWrapper,
+        roleClass = `${DiscordClasses.PopoutRoles.role.value} ${bodyInnerWrapperClass} interactive roleFilter`,
         roleCircleClass = DiscordClasses.PopoutRoles.roleCircle.value + " roleFilter",
         roleNameClass = DiscordClasses.PopoutRoles.roleName.value + " roleFilter";
 
@@ -63,6 +64,9 @@ module.exports = (Plugin, Library) => {
             this.handleRolePillClick = this.handleRolePillClick.bind(this);
             this.handleRoleFilterClick = this.handleRoleFilterClick.bind(this);
 
+            this.getRolesById = this.getRolesById.bind(this);
+            this.getRolesByName = this.getRolesByName.bind(this);
+
             this.useAnd = true;
         }
         
@@ -83,10 +87,10 @@ module.exports = (Plugin, Library) => {
 
             this.updateMemberList();
             
-            const roleModule = WebpackModules.getByProps("role")
-            
-            if(roleModule.role.includes(" interactive")) {
-                roleModule.role = roleModule.role.replace(" interactive","");
+            const roleClass = DiscordClassModules.PopoutRoles["role"];
+
+            if(roleClass.includes("interactive")) {
+                DiscordClassModules.PopoutRoles["role"] = roleClass.replace(" interactive","");
             }
 
             if (this.elementToRevertCSS) this.revertFilterCss();
@@ -131,18 +135,18 @@ module.exports = (Plugin, Library) => {
         removeRoleFromFilter(roleId) {
             if (!this.filter) return;
             this.filter.roles = this.filter.roles.filter(role => role.id != roleId);
-            this.filterByRoles(this.filter.roles);
+            this.setFilter(this.filter.roles);
             this.updateMemberList();
         }
 
         /**
-         * Make roles interactive, and set the guild id when viewing user's roles
+         * Make roles interactive
          */
         patchRoles() {
-            const roleModule = WebpackModules.getByProps("role")
+            const roleClass = DiscordClassModules.PopoutRoles["role"];
 
-            if(!roleModule.role.includes("interactive")) {
-                roleModule.role += " interactive"
+            if(!roleClass.includes("interactive")) {
+                DiscordClassModules.PopoutRoles["role"] += " interactive";
             }
         }
 
@@ -185,14 +189,15 @@ module.exports = (Plugin, Library) => {
         }
 
         patchRoleMention() {
-            const RoleMention = WebpackModules.getModule(m => m?.default.displayName === "RoleMention");
+            
+            const RoleMention = WebpackModules.getModule(m => m && m.default.displayName === "RoleMention");
             
             Patcher.after(RoleMention, "default", (_, [props], component) => {
                 if (!component || !component.props || !component.props.className ||
                     !component.props.className.toLowerCase().includes("mention")) return;
 
                 component.props.className += " interactive";
-                component.props.onClick = (e) => this.filterByRoleName(component.props.children[0].slice(1));
+                component.props.onClick = (e) => this.filterByRoles(component.props.children[0].slice(1), this.getRolesByName);
             });
         }
 
@@ -221,8 +226,19 @@ module.exports = (Plugin, Library) => {
         }
 
         initializeHeightValues() {
-            this.memberHeight = this.memberHeight || document.querySelector(".member-3-YXUe.container-2Pjhx-").offsetHeight;
-            this.sectionHeight = this.sectionHeight || document.querySelector(".membersGroup-v9BXpm.container-2ax-kl").offsetHeight;
+            this.memberHeight = this.memberHeight || 44;
+            this.sectionHeight = this.sectionHeight || 40;
+
+            document.querySelector(DiscordSelectors.UserPopout.body.value)
+        }
+
+        findFirstInDOMChildren(element, regex, childFormat) {
+            for (const child of element.children) {
+                if (childFormat(child) && regex.test(childFormat(child))) {
+                    return child;
+                }
+            }
+            return null;
         }
 
         /**
@@ -410,37 +426,41 @@ module.exports = (Plugin, Library) => {
         }
         
         /**
+         * Gets role from the current guild with matching id.
+         * @param {string} roleId
+         * @returns {Role} List of roles that match the passed name
+         */
+        getRolesById(roleId) {
+            const guildId = this.getGuildId();
+            const guild = GuildStore.getGuild(guildId);
+            const role = guild.roles[roleId];
+
+            return [new Role(
+                role.id,
+                role.name,
+                role.colorString || "#b9bbbe"
+            )];
+        }
+        
+        /**
          * Filter channel member list on list of roles.
          * @param {Role[]} roles Array of roles to filter by
          */
-        filterByRoles(roles) {
-            this.setFilter(
-                roles,
-                this.getAllowedMembers(roles, this.useAnd)
-            );
-        }
-
-        /**
-         * Add roleName to the list of roles to filter by.
-         * @param {string} roleName 
-         */
-        filterByRoleName(roleName) {
-            const newRoles = this.getRolesByName(roleName);
-
+        filterByRoles(roleVal, roleFunc) {
+            const newRoles = roleFunc(roleVal);
             if (this.filter) {
                 this.filter.roles = this.filter.roles.concat(
                     // Don't add the role to the filter if it's already in there
                     newRoles.filter(newRole => !this.filter.roles.some(role => role.id === newRole.id))
                 );
-                this.filterByRoles(this.filter.roles);
+                this.setFilter(this.filter.roles);
             }
             else
-                this.filterByRoles(newRoles);
-                
-            
-            Logger.info(`Clicked on role: "${roleName}". Members found:`, this.filter.membersAllowed);
+                this.setFilter(newRoles);
 
             this.updateMemberList();
+
+            Logger.info(`Clicked on role: "${roleVal}". Members found:`, this.filter.membersAllowed);
         }
 
         /**
@@ -448,7 +468,8 @@ module.exports = (Plugin, Library) => {
          * @param {Role[]} roles Array of roles included in the filter
          * @param {*} channelMembers Object which contains information on the filter
          */
-        setFilter(roles, channelMembers) {
+        setFilter(roles) {
+            const channelMembers = this.getAllowedMembers(roles, this.useAnd);
             this.filter = {
                 roles,
                 membersAllowed: channelMembers.membersList,
@@ -492,25 +513,35 @@ module.exports = (Plugin, Library) => {
          * @param {HTML element} target The element to handle the click event on
          */
         handleRolePillClick({ target }) {
-            let roleName = "";
+            let roleId = "";
 
             if(target.classList.contains("roleFilter")) {
                 return;
             } 
-            else if (target.classList.contains("role-2irmRk")) {
-                roleName = target.children[1].innerText;
+            else if (this.matchesClass(target, DiscordClasses.PopoutRoles.role.value)) {
+                roleId = this.getRoleId(target);
             }
-            else if (target.classList.contains("roleName-32vpEy")) {
-                roleName = target.innerText;
-            }
-            else if (target.classList.contains("roleCircle-3xAZ1j")) {
-                roleName = target.nextSibling.innerText;
+            else if (this.matchesClass(target, DiscordClasses.PopoutRoles.roleName.value) ||
+                    this.matchesClass(target, DiscordClasses.PopoutRoles.roleCircle.value)) {
+                roleId = this.getRoleId(target.parentElement)
             }
             else {
                 return;
             }
 
-            this.filterByRoleName(roleName);
+            // replace non-numerical characters in the id
+            roleId = roleId.replace(/\D/g,'');
+
+            this.filterByRoles(roleId, this.getRolesById);
+        }
+
+        matchesClass(target, className) {
+            return target.classList.contains(className) || target.className === className;
+        }
+
+        getRoleId(elem) {
+            const roleId = elem.attributes['data-list-item-id'].value;
+            return roleId.substr(roleId.indexOf("___", 3));
         }
         
         /**
