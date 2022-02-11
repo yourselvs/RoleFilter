@@ -1,5 +1,9 @@
 /**
  * @name RoleFilter
+ * @invite undefined
+ * @authorLink undefined
+ * @donate undefined
+ * @patreon undefined
  * @website https://github.com/yourselvs/RoleFilter
  * @source https://raw.githubusercontent.com/yourselvs/RoleFilter/main/release/RoleFilter.plugin.js
  */
@@ -52,17 +56,43 @@ module.exports = (() => {
         stop() {}
     } : (([Plugin, Api]) => {
         const plugin = (Plugin, Library) => {
-    const { DiscordClasses, DiscordClassModules, DiscordModules, DiscordSelectors, Logger, Patcher, PluginUtilities, ReactTools, Toasts, WebpackModules } = Library;
+    const { DiscordClassModules, DiscordModules, DiscordSelectors, Logger, Patcher, PluginUtilities, Popouts, ReactTools, Toasts, WebpackModules } = Library;
 
     const { GuildStore, React } = DiscordModules;
 
-    const Lists = WebpackModules.getByProps('ListThin');
+    const path = `M 256.00,0.00 C 114.60,0.00 0.00,114.60 0.00,256.00 0.00,397.40 114.60,512.00 256.00,512.00 397.40,512.00 512.00,397.40 512.00,256.00 512.00,114.60 397.40,0.00 256.00,0.00 Z M 377.30,316.50 C 385.70,324.90 385.70,338.50 377.30,346.90 377.30,346.90 346.90,377.30 346.90,377.30 338.50,385.70 324.90,385.70 316.50,377.30 316.50,377.30 255.70,316.50 255.70,316.50 255.70,316.50 194.90,377.30 194.90,377.30 186.50,385.70 172.90,385.70 164.50,377.30 164.50,377.30 134.00,346.90 134.00,346.90 125.60,338.50 125.60,324.90 134.00,316.50 134.00,316.50 194.80,255.70 194.80,255.70 194.80,255.70 134.00,194.80 134.00,194.80 125.60,186.40 125.60,172.80 134.00,164.40 134.00,164.40 164.40,134.00 164.40,134.00 172.80,125.60 186.40,125.60 194.80,134.00 194.80,134.00 255.60,194.80 255.60,194.80 255.60,194.80 316.40,134.00 316.40,134.00 324.80,125.60 338.40,125.60 346.80,134.00 346.80,134.00 377.20,164.40 377.20,164.40 385.60,172.80 385.60,186.40 377.20,194.80 377.20,194.80 316.40,255.60 316.40,255.60 316.40,255.60 377.30,316.50 377.30,316.50 Z`;
+    const roleFilterCss = `.roleFilterWrap::-webkit-scrollbar { 
+    display: none; 
+} 
 
-    const rootClass = DiscordClasses.PopoutRoles.root.value,
-        bodyInnerWrapperClass = WebpackModules.getByProps("bodyInnerWrapper").bodyInnerWrapper,
-        roleClass = `${DiscordClasses.PopoutRoles.role.value} ${bodyInnerWrapperClass} interactive roleFilter`,
-        roleCircleClass = DiscordClasses.PopoutRoles.roleCircle.value + " roleFilter",
-        roleNameClass = DiscordClasses.PopoutRoles.roleName.value + " roleFilter";
+.roleFilter-addBtn { 
+    fill: var(--interactive-normal)
+} 
+
+.roleFilter-addBtn:hover { 
+    fill: var(--interactive-hover) 
+}
+
+.roleFilter-listContainer {
+    width: 250px;
+    overflow: hidden;
+    border-radius: 4px;
+    box-sizing: border-box;
+    padding: 8px;
+    background-color: var(--background-primary);
+    border: 1px solid var(--background-modifier-accent);
+}`;
+
+    const Lists = WebpackModules.getByProps("ListThin");
+
+    const classes = {
+        roleRoot: DiscordClassModules.PopoutRoles.root,
+        role: `${DiscordClassModules.PopoutRoles.role} ${WebpackModules.getByProps("bodyInnerWrapper").bodyInnerWrapper} interactive roleFilter`,
+        roleCircle: DiscordClassModules.PopoutRoles.roleCircle + " roleFilter",
+        roleName: DiscordClassModules.PopoutRoles.roleName + " roleFilter",
+        layer: DiscordClassModules.TooltipLayers.layer,
+        listContainer: "roleFilter-listContainer"
+    }
 
     const Role = class Role {
         constructor(id, name, color) {
@@ -90,23 +120,67 @@ module.exports = (() => {
         }
 
         render() {
-            return React.createElement('div', {
-                className: roleClass,
+            return React.createElement("div", {
+                className: classes.role,
                 style: {overflow: "auto"},
                 onClick: this.onClick
             },
-                React.createElement('div', {
-                    className: roleCircleClass,
+                React.createElement("div", {
+                    className: classes.roleCircle,
                     style: {
                         backgroundColor: this.props.role.color,
                         // ensure circle has proper width on long role names
                         display: "inline-table"
                     }
                 }),
-                React.createElement('div', {className: roleNameClass},
+                React.createElement("div", {className: classes.roleName},
                     this.props.role.name
                 )
             )
+        }
+    }
+
+    const AddRoleButton = class AddRoleButton extends React.Component {
+        constructor(props) {
+            super(props);
+            this.onClick = this.onClick.bind(this);
+        }
+        
+        onClick(e) {
+            this.props.onClick(e);
+        }
+
+        render() {
+            return React.createElement("svg", {
+                className: "roleFilter-addBtn",
+                style: {
+                    width: "16px",
+                    height: "20px"
+                },
+                onClick: this.onClick
+            },
+                React.createElement("path", {
+                    d: path,
+                    style: {
+                        transformOrigin: "8px 0px",
+                        transform: "scale(0.03125) rotate(45deg)"
+                    }
+                })
+            )
+        }
+    }
+
+    const RolePopout = class RolePopout extends React.Component {
+        constructor(props) {
+            super(props);
+        }
+
+        render() {
+            return React.createElement("div", {
+                className: `${classes.layer} ${classes.listContainer}`
+            },
+                "testing testing testing"
+            );
         }
     }
 
@@ -115,6 +189,7 @@ module.exports = (() => {
             super();
 
             this.handleRolePillClick = this.handleRolePillClick.bind(this);
+            this.handleAddButtonClick = this.handleAddButtonClick.bind(this);
             this.handleRoleFilterClick = this.handleRoleFilterClick.bind(this);
 
             this.getRolesById = this.getRolesById.bind(this);
@@ -157,7 +232,7 @@ module.exports = (() => {
         }
 
         getGuildId() {
-            this.guildId = this.guildId || BdApi.findModuleByProps('getLastSelectedGuildId').getLastSelectedGuildId();
+            this.guildId = this.guildId || BdApi.findModuleByProps("getLastSelectedGuildId").getLastSelectedGuildId();
 
             return this.guildId;
         }
@@ -168,7 +243,7 @@ module.exports = (() => {
         initializeCss() {
             PluginUtilities.addStyle(
                 "RoleFilterCSS", 
-                ".roleFilterWrap::-webkit-scrollbar { display: none; }"
+                roleFilterCss
             );
         }
 
@@ -207,11 +282,11 @@ module.exports = (() => {
          * Renders the role pill when filtering. Watches for channel changes.
          */
         patchMemberList() {
-            Patcher.after(Lists.ListThin, 'render', (that, args, value) => {
+            Patcher.after(Lists.ListThin, "render", (that, args, value) => {
                 const [props] = args;
                 
-                if (!props || !props['data-list-id'] 
-                    || !props['data-list-id'].startsWith('members')
+                if (!props || !props["data-list-id"] 
+                    || !props["data-list-id"].startsWith("members")
                     // make sure the list is actually rendered before proceeding
                     || !value.ref || !value.ref.current) return value;
 
@@ -533,31 +608,72 @@ module.exports = (() => {
         }
 
         /**
-         * Creates a Role pill and prepends it to children of passed in element.
-         * @param {React.element} membersListElem React element to add role to
+         * Creates the RoleFilter elements and inserts them above the member list
+         * @param {React.element} membersListElem React element to add RoleFilter elements
          */
-        insertRoleElem(membersListElem) {            
+        insertRoleElem(membersListElem) {    
             if (!Array.isArray(membersListElem.props.children))
-                membersListElem.props.children = [membersListElem.props.children];
+            membersListElem.props.children = [membersListElem.props.children];
 
-            const roleStyle = this.filter && this.filter.roles.length > 0 ? {
-                padding: "24px 8px 0px 16px"
-            } : {
-                display: "none"
-            }
-
-            const roleContainer = React.createElement('div', {
-                className: rootClass,
-                style: roleStyle,
-                children: this.filter && this.filter.roles.map(role =>
-                    React.createElement(RolePill, {
-                        role,
-                        onClick: this.handleRoleFilterClick
-                    })
-                )
-            });
+            const roleContainer = this.createRoleFilterElements();
 
             membersListElem.props.children.unshift(roleContainer);
+            membersListElem.props.children.unshift();
+        }
+
+        /**
+         * Creates a Role pill and prepends it to children of passed in element. 
+         * @returns {React.element} React element that contains role filter elements
+         */
+         createRoleFilterElements() {
+            const roleStyle = { padding: "22px 8px 0px 16px" };
+
+            const roleFiltersList = this.getRoleFilterListElem();
+
+            const children = [this.getRoleAddButtonElem(roleFiltersList ? 6 : 0)];
+
+
+            if(roleFiltersList) {
+                children.push(roleFiltersList);
+            }
+
+            return React.createElement("div", {
+                className: classes.roleRoot,
+                style: roleStyle,
+                children: children
+            });
+        }
+
+        getRoleAddButtonElem(padding) {
+            return React.createElement("div", {
+                style: { 
+                    width: "100%",
+                    paddingBottom: `${padding}px`
+                }
+            }, 
+                React.createElement(AddRoleButton, {
+                    onClick: this.handleAddButtonClick
+                })
+            );
+        }
+
+        getRoleFilterListElem() {
+            const roleFiltersListChildren = this.getRoleFilterListChildren();
+
+            // if there are no children, return null
+            return roleFiltersListChildren && React.createElement("div", {
+                style: { display: "contents" },
+                children: roleFiltersListChildren
+            });
+        }
+
+        getRoleFilterListChildren() {
+            return this.filter && this.filter.roles.map(role =>
+                React.createElement(RolePill, {
+                    role,
+                    onClick: this.handleRoleFilterClick
+                })
+            );
         }
 
         /**
@@ -565,25 +681,29 @@ module.exports = (() => {
          * Filters out event if target's classes don't match role classes.
          * @param {HTML element} target The element to handle the click event on
          */
-        handleRolePillClick({ target }) {
+        handleRolePillClick(e) {
             let roleId = "";
+            
+            const target = e.target;
 
             if(target.classList.contains("roleFilter")) {
                 return;
             } 
-            else if (this.matchesClass(target, DiscordClasses.PopoutRoles.role.value)) {
+            else if (this.matchesClass(target, DiscordClassModules.PopoutRoles.role)) {
                 roleId = this.getRoleId(target);
             }
-            else if (this.matchesClass(target, DiscordClasses.PopoutRoles.roleName.value) ||
-                    this.matchesClass(target, DiscordClasses.PopoutRoles.roleCircle.value)) {
+            else if (this.matchesClass(target, DiscordClassModules.PopoutRoles.roleName) ||
+                    this.matchesClass(target, DiscordClassModules.PopoutRoles.roleCircle)) {
                 roleId = this.getRoleId(target.parentElement)
             }
             else {
                 return;
             }
 
+            if (e.stopPropogation) e.stopPropogation();
+
             // replace non-numerical characters in the id
-            roleId = roleId.replace(/\D/g,'');
+            roleId = roleId.replace(/\D/g,"");
 
             this.filterByRoles(roleId, this.getRolesById);
         }
@@ -593,8 +713,26 @@ module.exports = (() => {
         }
 
         getRoleId(elem) {
-            const roleId = elem.attributes['data-list-item-id'].value;
+            const roleId = elem.attributes["data-list-item-id"].value;
             return roleId.substr(roleId.indexOf("___", 3));
+        }
+
+        handleAddButtonClick(e) {
+            const openPopouts = document.querySelectorAll(`.${classes.listContainer}`);
+
+            openPopouts.forEach(openPopout => openPopout.remove());
+            
+            Popouts.openPopout(e.target, {
+                position: "left",
+                align: "top",
+                spacing: 258,
+                animation: Popouts.AnimationTypes.TRANSLATE,
+                render: (p) => {
+                    return React.createElement(RolePopout, p);
+                }
+            });
+            
+            if (e.stopPropagation) e.stopPropagation();
         }
         
         /**

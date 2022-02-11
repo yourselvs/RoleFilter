@@ -1,0 +1,21 @@
+.roleFilterWrap::-webkit-scrollbar { 
+    display: none; 
+} 
+
+.roleFilter-addBtn { 
+    fill: var(--interactive-normal)
+} 
+
+.roleFilter-addBtn:hover { 
+    fill: var(--interactive-hover) 
+}
+
+.roleFilter-listContainer {
+    width: 250px;
+    overflow: hidden;
+    border-radius: 4px;
+    box-sizing: border-box;
+    padding: 8px;
+    background-color: var(--background-primary);
+    border: 1px solid var(--background-modifier-accent);
+}
