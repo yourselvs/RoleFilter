@@ -65,12 +65,23 @@ module.exports = (() => {
     display: none; 
 } 
 
+.roleFilter-header {
+    padding: 22px 8px 0px 16px;
+}
+
 .roleFilter-addBtn { 
-    fill: var(--interactive-normal)
+    fill: var(--interactive-normal);
+    width: 16px;
+    height: 20px;
 } 
 
 .roleFilter-addBtn:hover { 
-    fill: var(--interactive-hover) 
+    fill: var(--interactive-hover);
+}
+
+.roleFilter-addBtnPath {
+    transform: scale(0.03125) rotate(45deg);
+    transform-origin: 8px 0px;
 }
 
 .roleFilter-listContainer {
@@ -81,6 +92,14 @@ module.exports = (() => {
     padding: 8px;
     background-color: var(--background-primary);
     border: 1px solid var(--background-modifier-accent);
+}
+
+.roleFilter-btnContainer {
+    width: 100%;
+}
+
+.roleFilter-btnPadding {
+    padding-bottom: 6px;
 }`;
 
     const Lists = WebpackModules.getByProps("ListThin");
@@ -91,7 +110,12 @@ module.exports = (() => {
         roleCircle: DiscordClassModules.PopoutRoles.roleCircle + " roleFilter",
         roleName: DiscordClassModules.PopoutRoles.roleName + " roleFilter",
         layer: DiscordClassModules.TooltipLayers.layer,
-        listContainer: "roleFilter-listContainer"
+        header: "roleFilter-header",
+        listContainer: "roleFilter-listContainer",
+        btnContainer: "roleFilter-btnContainer",
+        btnPadding: "roleFilter-btnPadding",
+        addBtn: "roleFilter-addBtn",
+        addBtnPath: "roleFilter-addBtnPath"
     }
 
     const Role = class Role {
@@ -140,6 +164,27 @@ module.exports = (() => {
         }
     }
 
+    const RoleFilterList = class RoleFilterList extends React.Component {
+        render() {
+            const roleFiltersListChildren = this.getRoleFilterListChildren(this.props.filter);
+
+            // if there are no children, return null rather than undefined
+            return roleFiltersListChildren ? React.createElement("div", {
+                style: { display: "contents" },
+                children: roleFiltersListChildren
+            }) : null;
+        }
+
+        getRoleFilterListChildren(filter) {
+            return filter && filter.roles.map(role =>
+                React.createElement(RolePill, {
+                    role,
+                    onClick: this.props.onClick
+                })
+            );
+        }
+    }
+
     const AddRoleButton = class AddRoleButton extends React.Component {
         constructor(props) {
             super(props);
@@ -151,23 +196,41 @@ module.exports = (() => {
         }
 
         render() {
-            return React.createElement("svg", {
-                className: "roleFilter-addBtn",
-                style: {
-                    width: "16px",
-                    height: "20px"
+            let btnContainerClass = `${classes.btnContainer} ${this.props.padding && classes.btnPadding}`;
+            
+            return React.createElement("div", {
+                className: btnContainerClass
+            }, 
+                React.createElement("svg", {
+                    className: classes.addBtn,
+                    onClick: this.onClick
                 },
-                onClick: this.onClick
-            },
-                React.createElement("path", {
-                    d: path,
-                    style: {
-                        transformOrigin: "8px 0px",
-                        transform: "scale(0.03125) rotate(45deg)"
-                    }
-                })
-            )
+                    React.createElement("path", {
+                        className: classes.addBtnPath,
+                        d: path
+                    })
+                )
+            );
         }
+    }
+
+    const RoleHeader = class RoleHeader extends React.Component {
+        render() {
+            const containerClass = `${classes.roleRoot} ${classes.header}`;
+
+            return React.createElement("div", {
+                className: containerClass
+            },
+                React.createElement(AddRoleButton, {
+                    onClick: this.props.onAddButtonClick,
+                    padding: this.props.filter ? 6 : 0
+                }),
+                React.createElement(RoleFilterList, {
+                    filter: this.props.filter,
+                    onClick: this.props.onRoleClick
+                })
+            );
+        }        
     }
 
     const RolePopout = class RolePopout extends React.Component {
@@ -295,7 +358,7 @@ module.exports = (() => {
                 this.patchMemberListContainer(value);
 
                 if (!this.channel || this.channel.id != memberListContainer.props.channel.id) {
-                    Logger.info("Channel change detected.");
+                    // Logger.info("Channel change detected.");
                     // if a channel object isn't created, or if the channel has changed, create new channel
                     this.channel = new Channel(
                         memberListContainer.props.channel.id,
@@ -588,7 +651,7 @@ module.exports = (() => {
 
             this.updateMemberList();
 
-            Logger.info(`Clicked on role: "${roleVal}". Members found:`, this.filter.membersAllowed);
+            // Logger.info(`Clicked on role: "${roleVal}". Members found:`, this.filter.membersAllowed);
         }
 
         /**
@@ -608,72 +671,21 @@ module.exports = (() => {
         }
 
         /**
-         * Creates the RoleFilter elements and inserts them above the member list
+         * Creates a RoleHeader component and inserts it above the member list
          * @param {React.element} membersListElem React element to add RoleFilter elements
          */
         insertRoleElem(membersListElem) {    
             if (!Array.isArray(membersListElem.props.children))
             membersListElem.props.children = [membersListElem.props.children];
 
-            const roleContainer = this.createRoleFilterElements();
+            const roleHeader = React.createElement(RoleHeader, {
+                onAddButtonClick: this.handleAddButtonClick,
+                onRoleClick: this.handleRoleFilterClick,
+                filter: this.filter
+            });
 
-            membersListElem.props.children.unshift(roleContainer);
+            membersListElem.props.children.unshift(roleHeader);
             membersListElem.props.children.unshift();
-        }
-
-        /**
-         * Creates a Role pill and prepends it to children of passed in element. 
-         * @returns {React.element} React element that contains role filter elements
-         */
-         createRoleFilterElements() {
-            const roleStyle = { padding: "22px 8px 0px 16px" };
-
-            const roleFiltersList = this.getRoleFilterListElem();
-
-            const children = [this.getRoleAddButtonElem(roleFiltersList ? 6 : 0)];
-
-
-            if(roleFiltersList) {
-                children.push(roleFiltersList);
-            }
-
-            return React.createElement("div", {
-                className: classes.roleRoot,
-                style: roleStyle,
-                children: children
-            });
-        }
-
-        getRoleAddButtonElem(padding) {
-            return React.createElement("div", {
-                style: { 
-                    width: "100%",
-                    paddingBottom: `${padding}px`
-                }
-            }, 
-                React.createElement(AddRoleButton, {
-                    onClick: this.handleAddButtonClick
-                })
-            );
-        }
-
-        getRoleFilterListElem() {
-            const roleFiltersListChildren = this.getRoleFilterListChildren();
-
-            // if there are no children, return null
-            return roleFiltersListChildren && React.createElement("div", {
-                style: { display: "contents" },
-                children: roleFiltersListChildren
-            });
-        }
-
-        getRoleFilterListChildren() {
-            return this.filter && this.filter.roles.map(role =>
-                React.createElement(RolePill, {
-                    role,
-                    onClick: this.handleRoleFilterClick
-                })
-            );
         }
 
         /**

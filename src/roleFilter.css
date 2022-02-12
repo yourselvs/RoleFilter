@@ -2,12 +2,23 @@
     display: none; 
 } 
 
+.roleFilter-header {
+    padding: 22px 8px 0px 16px;
+}
+
 .roleFilter-addBtn { 
-    fill: var(--interactive-normal)
+    fill: var(--interactive-normal);
+    width: 16px;
+    height: 20px;
 } 
 
 .roleFilter-addBtn:hover { 
-    fill: var(--interactive-hover) 
+    fill: var(--interactive-hover);
+}
+
+.roleFilter-addBtnPath {
+    transform: scale(0.03125) rotate(45deg);
+    transform-origin: 8px 0px;
 }
 
 .roleFilter-listContainer {
@@ -18,4 +29,12 @@
     padding: 8px;
     background-color: var(--background-primary);
     border: 1px solid var(--background-modifier-accent);
+}
+
+.roleFilter-btnContainer {
+    width: 100%;
+}
+
+.roleFilter-btnPadding {
+    padding-bottom: 6px;
 }
