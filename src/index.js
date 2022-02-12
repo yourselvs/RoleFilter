@@ -22,6 +22,9 @@ module.exports = (Plugin, Library) => {
         addBtnPath: "roleFilter-addBtnPath"
     }
 
+    const memberHeight = 44,
+        sectionHeight = 40;
+
     const Role = class Role {
         constructor(id, name, color) {
             this.id = id;
@@ -198,6 +201,11 @@ module.exports = (Plugin, Library) => {
             this.updateMemberList();
         }
 
+        /**
+         * Retrieves, caches, and returns guild id, 
+         * which is reset every time guild is changed
+         * @returns {number} Last selected Guild ID
+         */
         getGuildId() {
             this.guildId = this.guildId || BdApi.findModuleByProps("getLastSelectedGuildId").getLastSelectedGuildId();
 
@@ -273,8 +281,6 @@ module.exports = (Plugin, Library) => {
                 // always insert the element, even when not filtering
                 // so that user popout does not close when clicking filter
                 if (value) this.insertRoleElem(value);
-
-                this.initializeHeightValues();
                 
                 if (this.filter) this.applyFilterCss(value.ref.current);
                 else if (this.elementToRevertCSS) this.revertFilterCss();
@@ -283,8 +289,10 @@ module.exports = (Plugin, Library) => {
             });
         }
 
+        /**
+         * Makes role mentions clickable, adds to filter
+         */
         patchRoleMention() {
-            
             const RoleMention = WebpackModules.getModule(m => m && m.default.displayName === "RoleMention");
             
             Patcher.after(RoleMention, "default", (_, [props], component) => {
@@ -320,33 +328,19 @@ module.exports = (Plugin, Library) => {
             });
         }
 
-        initializeHeightValues() {
-            this.memberHeight = this.memberHeight || 44;
-            this.sectionHeight = this.sectionHeight || 40;
-
-            document.querySelector(DiscordSelectors.UserPopout.body.value)
-        }
-
-        findFirstInDOMChildren(element, regex, childFormat) {
-            for (const child of element.children) {
-                if (childFormat(child) && regex.test(childFormat(child))) {
-                    return child;
-                }
-            }
-            return null;
-        }
-
         /**
          * Apply CSS to the elements which make up the members list.
-         * Allows all members to render and still be scrollable.
+         * Bypasses lazyload by forcing the container to be as tall 
+         * as needed to render all members. Shrinks viewport and
+         * makes it scrollable.
          * @param {HTML element} element The members list HTML element
          */
         applyFilterCss(element) {
             const filterElementHeight = element.children[0].offsetHeight,
-                totalMemberHeight = this.filter.membersFound * this.memberHeight,
-                totalSectionHeight = this.filter.sectionsFound * this.sectionHeight,
-                filteredMemberHeight = this.filter.membersAllowed.length * this.memberHeight,
-                filteredSectionHeight = Object.keys(this.filter.sectionsAllowed).length * this.sectionHeight,
+                totalMemberHeight = this.filter.membersFound * memberHeight,
+                totalSectionHeight = this.filter.sectionsFound * sectionHeight,
+                filteredMemberHeight = this.filter.membersAllowed.length * memberHeight,
+                filteredSectionHeight = Object.keys(this.filter.sectionsAllowed).length * sectionHeight,
                 // get the amount of padding there should be at the bottom of the list
                 bottomPadding = element.computedStyleMap().get("padding-bottom").value;
 
@@ -624,15 +618,30 @@ module.exports = (Plugin, Library) => {
             this.filterByRoles(roleId, this.getRolesById);
         }
 
-        matchesClass(target, className) {
-            return target.classList.contains(className) || target.className === className;
+        /**
+         * Searches for a target classname in an html element
+         * @param {HTML element} target The element to search
+         * @param {string} classToMatch The className to search for
+         * @returns {boolean} Whether classToMatch is found in target's classes
+         */
+        matchesClass(target, classToMatch) {
+            return target.classList.contains(classToMatch) || target.className === classToMatch;
         }
 
+        /**
+         * Parses an element's attributes to retrieve the role id
+         * @param {HTML element} elem Element representing a role id
+         * @returns {string} The role id of the element
+         */
         getRoleId(elem) {
             const roleId = elem.attributes["data-list-item-id"].value;
-            return roleId.substr(roleId.indexOf("___", 3));
+            return roleId && roleId.substr(roleId.indexOf("___", 3));
         }
 
+        /**
+         * Opens a popout to add roles to the filter
+         * @param {MouseEvent} e
+         */
         handleAddButtonClick(e) {
             const openPopouts = document.querySelectorAll(`.${classes.listContainer}`);
 
