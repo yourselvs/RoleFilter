@@ -56,12 +56,13 @@ module.exports = (() => {
         stop() {}
     } : (([Plugin, Api]) => {
         const plugin = (Plugin, Library) => {
-    const { DiscordClassModules, DiscordModules, DiscordSelectors, Logger, Patcher, PluginUtilities, Popouts, ReactTools, Toasts, WebpackModules } = Library;
+    const { DiscordClasses, DiscordClassModules, DiscordModules, DiscordSelectors, Logger, Patcher, PluginUtilities, Popouts, ReactTools, Toasts, Tooltip, WebpackModules } = Library;
 
     const { GuildStore, React } = DiscordModules;
 
     const path = `M 256.00,0.00 C 114.60,0.00 0.00,114.60 0.00,256.00 0.00,397.40 114.60,512.00 256.00,512.00 397.40,512.00 512.00,397.40 512.00,256.00 512.00,114.60 397.40,0.00 256.00,0.00 Z M 377.30,316.50 C 385.70,324.90 385.70,338.50 377.30,346.90 377.30,346.90 346.90,377.30 346.90,377.30 338.50,385.70 324.90,385.70 316.50,377.30 316.50,377.30 255.70,316.50 255.70,316.50 255.70,316.50 194.90,377.30 194.90,377.30 186.50,385.70 172.90,385.70 164.50,377.30 164.50,377.30 134.00,346.90 134.00,346.90 125.60,338.50 125.60,324.90 134.00,316.50 134.00,316.50 194.80,255.70 194.80,255.70 194.80,255.70 134.00,194.80 134.00,194.80 125.60,186.40 125.60,172.80 134.00,164.40 134.00,164.40 164.40,134.00 164.40,134.00 172.80,125.60 186.40,125.60 194.80,134.00 194.80,134.00 255.60,194.80 255.60,194.80 255.60,194.80 316.40,134.00 316.40,134.00 324.80,125.60 338.40,125.60 346.80,134.00 346.80,134.00 377.20,164.40 377.20,164.40 385.60,172.80 385.60,186.40 377.20,194.80 377.20,194.80 316.40,255.60 316.40,255.60 316.40,255.60 377.30,316.50 377.30,316.50 Z`;
-    const roleFilterCss = `.roleFilterWrap::-webkit-scrollbar { 
+    const roleFilterCss = `/* Prevent the scrollbar from rendering while the filter is active */
+.roleFilterWrap::-webkit-scrollbar { 
     display: none; 
 } 
 
@@ -73,6 +74,7 @@ module.exports = (() => {
     fill: var(--interactive-normal);
     width: 16px;
     height: 20px;
+    cursor: pointer;
 } 
 
 .roleFilter-addBtn:hover { 
@@ -84,14 +86,65 @@ module.exports = (() => {
     transform-origin: 8px 0px;
 }
 
-.roleFilter-listContainer {
+.roleFilter-popoutContainer {
     width: 250px;
+    height: 400px;
+    padding: 8px;
     overflow: hidden;
     border-radius: 4px;
-    box-sizing: border-box;
-    padding: 8px;
-    background-color: var(--background-primary);
     border: 1px solid var(--background-modifier-accent);
+    background-color: var(--background-primary);
+    box-sizing: border-box;
+    display: flex;
+    flex-wrap: wrap;
+}
+
+/* Hide  */
+.roleFilter-popoutContainer::-webkit-scrollbar { 
+    display: none; 
+} 
+
+.roleFilter-listContainer {
+    width: 100%;
+    height: calc(100% - 46px);
+    overflow-y: scroll;
+    border-radius: 4px;
+}
+
+.roleFilter-listContainer::-webkit-scrollbar { 
+    display: none; 
+} 
+
+.roleFilter-searchContainer {
+    width: 100%;
+    background: var(--background-tertiary);
+    margin-bottom: 10px;
+    border-radius: 4px;
+    padding: 1px 0px;
+}
+
+.roleFilter-searchInput {
+    font-size: 16px;
+    height: 34px;
+    padding: 0 8px;
+    background: none;
+    border: none;
+    color: var(--text-normal);
+}
+
+.roleFilter-listOption {
+    padding: 8px;
+    margin-bottom: 8px;
+    background: var(--background-secondary);
+    border-radius: 4px;
+}
+
+.roleFilter-listOption:last-of-type {
+    margin-bottom: 0;
+}
+
+.roleFilter-listOption.selected {
+    background: var(--background-secondary-alt);
 }
 
 .roleFilter-btnContainer {
@@ -100,18 +153,26 @@ module.exports = (() => {
 
 .roleFilter-btnPadding {
     padding-bottom: 6px;
+}
+
+.roleFilter-role {
+    margin: 4px 4px 0px 0px;
 }`;
 
     const Lists = WebpackModules.getByProps("ListThin");
 
     const classes = {
         roleRoot: DiscordClassModules.PopoutRoles.root,
-        role: `${DiscordClassModules.PopoutRoles.role} ${WebpackModules.getByProps("bodyInnerWrapper").bodyInnerWrapper} interactive roleFilter`,
+        role: `${DiscordClassModules.PopoutRoles.role} ${WebpackModules.getByProps("bodyInnerWrapper").bodyInnerWrapper} interactive roleFilter roleFilter-role`,
         roleCircle: DiscordClassModules.PopoutRoles.roleCircle + " roleFilter",
         roleName: DiscordClassModules.PopoutRoles.roleName + " roleFilter",
         layer: DiscordClassModules.TooltipLayers.layer,
         header: "roleFilter-header",
+        popoutContainer: "roleFilter-popoutContainer",
         listContainer: "roleFilter-listContainer",
+        listOption: "roleFilter-listOption",
+        searchContainer: "roleFilter-searchContainer",
+        searchInput: "roleFilter-searchInput",
         btnContainer: "roleFilter-btnContainer",
         btnPadding: "roleFilter-btnPadding",
         addBtn: "roleFilter-addBtn",
@@ -121,6 +182,11 @@ module.exports = (() => {
     const memberHeight = 44,
         sectionHeight = 40;
 
+    /**
+     * @param {string} id The discord id of the role
+     * @param {string} name The name assigned to the role
+     * @param {string} color The color assigned to the role
+     */
     const Role = class Role {
         constructor(id, name, color) {
             this.id = id;
@@ -129,6 +195,11 @@ module.exports = (() => {
         }
     }
 
+    /**
+     * @param {string} id The discord id of the channel
+     * @param {Member[]} rows Array of Member objects used by discord to construct member list.
+     *      (not user defined)
+     */
     const Channel = class Channel {
         constructor(id, rows) {
             this.id = id;
@@ -136,7 +207,33 @@ module.exports = (() => {
         }
     }
 
+    /**
+     * @param {Role[]} roles List of roles in the filter
+     * @param {string[]} membersAllowed List of user ids allowed by the filter
+     * @param {string[]} sectionsAllowed List of section ids allowed by the filter
+     * @param {number} membersFound Number of total members found when searching through filter
+     *      Includes members not in the filter
+     *      Used for calculating member list container height
+     * @param {number} sectionsFound Number of total sections found when searching through filter
+     *      Includes sections not in the filter
+     *      Used for calculating member list container height
+     */
+    const Filter = class Filter {
+        constructor(roles, membersAllowed, sectionsAllowed, membersFound, sectionsFound) {
+            this.roles = roles;
+            this.membersAllowed = membersAllowed;
+            this.sectionsAllowed = sectionsAllowed;
+            this.membersFound = membersFound;
+            this.sectionsFound = sectionsFound;
+        }
+    }
+
+    /**
+     * @property {(e) => void} onClick Called when role pill is clicked
+     * @property {Role} role Role object to construct role pill from
+     */
     const RolePill = class RolePill extends React.Component {
+
         constructor(props) {
             super(props);
             this.onClick = this.onClick.bind(this);
@@ -167,6 +264,10 @@ module.exports = (() => {
         }
     }
 
+    /**
+     * @property {(e) => void} onClick Called when a role pill in the list is clicked
+     * @property {Filter} filter The plugin's current filter state
+     */
     const RoleFilterList = class RoleFilterList extends React.Component {
         render() {
             const roleFiltersListChildren = this.getRoleFilterListChildren(this.props.filter);
@@ -188,6 +289,10 @@ module.exports = (() => {
         }
     }
 
+    /**
+     * @property {(e) => void} onClick Called when the add button is clicked
+     * @property {boolean} usePadding
+     */
     const AddRoleButton = class AddRoleButton extends React.Component {
         constructor(props) {
             super(props);
@@ -199,7 +304,7 @@ module.exports = (() => {
         }
 
         render() {
-            let btnContainerClass = `${classes.btnContainer} ${this.props.padding && classes.btnPadding}`;
+            let btnContainerClass = `${classes.btnContainer} ${this.props.usePadding && classes.btnPadding}`;
             
             return React.createElement("div", {
                 className: btnContainerClass
@@ -217,6 +322,11 @@ module.exports = (() => {
         }
     }
 
+    /**
+     * @property {() => void} onAddButtonClick Called when the "add role" button is clicked
+     * @property {() => void} onRoleClick Called when a role pill in the filter list is clicked
+     * @property {Filter} filter The plugin's current filter state
+     */
     const RoleHeader = class RoleHeader extends React.Component {
         render() {
             const containerClass = `${classes.roleRoot} ${classes.header}`;
@@ -226,7 +336,7 @@ module.exports = (() => {
             },
                 React.createElement(AddRoleButton, {
                     onClick: this.props.onAddButtonClick,
-                    padding: this.props.filter ? 6 : 0
+                    usePadding: !!this.props.filter
                 }),
                 React.createElement(RoleFilterList, {
                     filter: this.props.filter,
@@ -236,17 +346,170 @@ module.exports = (() => {
         }        
     }
 
+    /**
+     * @property {() => void} onRoleClick Called when a role in the popout list is clicked
+     * @property {Role[]} guildRoles List of roles in the currently selected guild
+     * @property {Role[]} selectedRoles List of roles applied by the filter
+     */
     const RolePopout = class RolePopout extends React.Component {
         constructor(props) {
             super(props);
+
+            this.state = {
+                searchValue: null
+            };
+
+            this.onSearch = this.onSearch.bind(this);
         }
 
         render() {
             return React.createElement("div", {
-                className: `${classes.layer} ${classes.listContainer}`
+                className: `${classes.layer} ${classes.popoutContainer}`
             },
-                "testing testing testing"
+                React.createElement(RoleSearch, {
+                    onChange: this.onSearch
+                }),
+                React.createElement(RoleList, {
+                    onRoleClick: this.props.onRoleClick,
+                    guildRoles: this.props.guildRoles,
+                    selectedRoles: this.props.selectedRoles,
+                    searchValue: this.state.searchValue
+                })
             );
+        }
+
+        onSearch(event) {
+            this.setState({
+                searchValue: event.target.value
+            });
+        }
+    }
+
+    /**
+     * @property {() => void} onChange Called when the input value is changed
+     */
+    const RoleSearch = class RoleSearch extends React.Component {
+        render() {
+            return React.createElement("div", {
+                className: classes.searchContainer
+            },
+                React.createElement("input", {
+                    className: classes.searchInput,
+                    placeholder: "Search Roles...",
+                    onChange: this.props.onChange,
+                    autoFocus: true,
+                    onFocus: e => e.target.select()
+                })
+            );
+        }
+    }
+
+    /**
+     * @property {() => void} onRoleClick Called when a role in the popout list is clicked
+     * @property {Role[]} guildRoles List of roles in the currently selected guild
+     * @property {Role[]} selectedRoles List of roles applied by the filter
+     * @property {string} searchValue Value that the role names must include to show up in the list
+     */
+    const RoleList = class RoleList extends React.Component {
+        constructor(props) {
+            super(props);
+
+            this.state = {
+                selectedRoles: this.props.selectedRoles
+            }
+
+            this.onRoleClick = this.onRoleClick.bind(this);
+        }
+
+        render() {
+            return React.createElement("div", {
+                className: classes.listContainer,
+                children: this.getRoleList()
+            });
+        }
+
+        /**
+         * Maps the guild's roles to RoleListOption components.
+         * Filters roles to include the searchValue prop in the role's name.
+         * Highlights roles that are selected
+         * @returns {RoleListOption[]}
+         */
+        getRoleList() {
+            return this.props.guildRoles.map(role => {
+                const passesSearch = this.searchRole(role);
+
+                if(!passesSearch)
+                    return null;
+
+                const selected = this.state.selectedRoles && 
+                    this.state.selectedRoles.some(selectedRole => 
+                        selectedRole.id == role.id
+                    );
+
+                return React.createElement(RoleListOption, {
+                    onClick: this.onRoleClick,
+                    role,
+                    selected
+                })
+            });
+        }
+
+        /**
+         * Adds role to the selectedRoles state.
+         * Fires callback to add role to plugin state.
+         * @param {Role} role Role object to add to state and filter
+         */
+        onRoleClick(role) {
+            let roles = this.state.selectedRoles;
+
+            if(!roles)
+                roles = [];
+
+            roles.push(role);
+
+            this.setState({
+                selectedRoles: roles
+            });
+
+            this.props.onRoleClick(role);
+        }
+
+        /**
+         * Checks if a role's name passes the search filter, case-insensitive
+         * @param {Role} role Role to validate
+         * @returns {boolean} True if role name includes search value, false otherwise
+         */
+        searchRole(role) {
+            if(!this.props.searchValue)
+                return true;
+
+            return role.name.toLowerCase().includes(this.props.searchValue.toLowerCase());
+        }
+    }
+
+    /**
+     * @property {Role} role The role to construct the list option from
+     * @property {boolean} selected Whether or not the list option is selected in the filter
+     */
+    const RoleListOption = class RoleListOption extends React.Component {
+        constructor(props) {
+            super(props);
+            
+            this.onClick = this.onClick.bind(this);
+        }
+
+        render() {
+            return React.createElement("div", {
+                className: `${classes.listOption} ${this.props.selected ? 'selected': 'interactive'}`,
+                style: {
+                    color: this.props.role.color
+                },
+                onClick: this.onClick
+            }, this.props.role.name);
+        }
+
+        onClick() {
+            this.props.onClick(this.props.role);
         }
     }
 
@@ -258,8 +521,9 @@ module.exports = (() => {
             this.handleAddButtonClick = this.handleAddButtonClick.bind(this);
             this.handleRoleFilterClick = this.handleRoleFilterClick.bind(this);
 
-            this.getRolesById = this.getRolesById.bind(this);
+            this.getRoleById = this.getRoleById.bind(this);
             this.getRolesByName = this.getRolesByName.bind(this);
+            this.addRoleToFilter = this.addRoleToFilter.bind(this);
 
             this.useAnd = true;
         }
@@ -309,7 +573,7 @@ module.exports = (() => {
         }
 
         /**
-         * Prevent the scrollbar from rendering while the filter is active
+         * Apply plugin css. Supplies css for all custom component classes
          */
         initializeCss() {
             PluginUtilities.addStyle(
@@ -323,6 +587,7 @@ module.exports = (() => {
          */
         resetFilter() {
             this.guildId = "";
+            this.allRoles = null;
             this.filter = null;
             this.updateMemberList();
         }
@@ -395,8 +660,10 @@ module.exports = (() => {
                 if (!component || !component.props || !component.props.className ||
                     !component.props.className.toLowerCase().includes("mention")) return;
 
+                const roles = this.getRolesByName(component.props.children[0].slice(1));
+
                 component.props.className += " interactive";
-                component.props.onClick = (e) => this.filterByRoles(component.props.children[0].slice(1), this.getRolesByName);
+                component.props.onClick = (e) => this.addRolesToFilter(roles);
             });
         }
 
@@ -438,10 +705,14 @@ module.exports = (() => {
                 filteredMemberHeight = this.filter.membersAllowed.length * memberHeight,
                 filteredSectionHeight = Object.keys(this.filter.sectionsAllowed).length * sectionHeight,
                 // get the amount of padding there should be at the bottom of the list
-                bottomPadding = element.computedStyleMap().get("padding-bottom").value;
+                bottomPadding = element.computedStyleMap().get("padding-bottom").value,
+                roleButtonHeight = 30;
 
             // set the list height so that all members are rendered
-            element.style.height = filterElementHeight + totalSectionHeight + totalMemberHeight + "px";
+            element.style.height = filterElementHeight 
+                + totalSectionHeight 
+                + totalMemberHeight 
+                + roleButtonHeight + "px";
             element.style.removeProperty("overflow");
 
             const parentElement = element.parentElement;
@@ -591,19 +862,14 @@ module.exports = (() => {
          * @returns {Role[]} List of roles that match the passed name
          */
         getRolesByName(roleName) {
-            const guildRoles = GuildStore.getGuild(this.getGuildId()).roles;
+            const guildRoles = this.getAllRoles();
 
             const roles = [];
 
             // roles is not an array >:( so we have to iterate through keys
-            for (const roleId in guildRoles) {
-                const guildRole = guildRoles[roleId];
-                if(guildRole.name && roleName === guildRole.name) {
-                    roles.push(new Role(
-                        guildRole.id,
-                        guildRole.name,
-                        guildRole.colorString || "#b9bbbe"
-                    ));
+            for (const role in guildRoles) {
+                if(role.name && roleName === role.name) {
+                    roles.push(role);
                 }
             }
 
@@ -613,26 +879,62 @@ module.exports = (() => {
         /**
          * Gets role from the current guild with matching id.
          * @param {string} roleId
-         * @returns {Role} List of roles that match the passed name
+         * @returns {Role} Role with matching id in current guild
          */
-        getRolesById(roleId) {
-            const guildId = this.getGuildId();
-            const guild = GuildStore.getGuild(guildId);
+        getRoleById(roleId) {
+            const guild = GuildStore.getGuild(this.getGuildId());
             const role = guild.roles[roleId];
 
-            return [new Role(
+            return new Role(
                 role.id,
                 role.name,
                 role.colorString || "#b9bbbe"
-            )];
+            );
         }
-        
+
         /**
-         * Filter channel member list on list of roles.
-         * @param {Role[]} roles Array of roles to filter by
+         * Generates, caches, and returns list of guild roles
+         * @returns {Role[]} List of roles
          */
-        filterByRoles(roleVal, roleFunc) {
-            const newRoles = roleFunc(roleVal);
+        getAllRoles() {
+            this.allRoles = this.allRoles || this.generateAllRoles();
+            return this.allRoles;
+        }
+
+        /**
+         * Maps roles in the current guild to a Role object
+         * @returns {Role[]} List of roles
+         */
+        generateAllRoles() {
+            const guildRoles = GuildStore.getGuild(this.getGuildId()).roles;
+
+            const roles = [];
+
+            for(const roleId in guildRoles) {
+                const guildRole = guildRoles[roleId];
+                roles.push(new Role(
+                    guildRole.id,
+                    guildRole.name,
+                    guildRole.colorString || "#b9bbbe"
+                ));
+            }
+            return roles;
+        }
+
+        /**
+         * Wraps a single role in an array and passes it off to new function
+         * @param {Role} newRole Role to add to filter
+         */
+        addRoleToFilter(newRole) {
+            this.addRolesToFilter([newRole]);
+        }
+
+        /**
+         * Adds a list of roles to the filter and updates the member list.
+         * Creates a new filter if not already filtering.
+         * @param {Role[]} newRoles List of roles to add
+         */
+        addRolesToFilter(newRoles) {
             if (this.filter) {
                 this.filter.roles = this.filter.roles.concat(
                     // Don't add the role to the filter if it's already in there
@@ -640,12 +942,11 @@ module.exports = (() => {
                 );
                 this.setFilter(this.filter.roles);
             }
+
             else
                 this.setFilter(newRoles);
 
             this.updateMemberList();
-
-            // Logger.info(`Clicked on role: "${roleVal}". Members found:`, this.filter.membersAllowed);
         }
 
         /**
@@ -655,13 +956,13 @@ module.exports = (() => {
          */
         setFilter(roles) {
             const channelMembers = this.getAllowedMembers(roles, this.useAnd);
-            this.filter = {
+            this.filter = new Filter(
                 roles,
-                membersAllowed: channelMembers.membersList,
-                sectionsAllowed: channelMembers.groupList,
-                membersFound: channelMembers.membersFound,
-                sectionsFound: channelMembers.sectionsFound
-            }
+                channelMembers.membersList,
+                channelMembers.groupList,
+                channelMembers.membersFound,
+                channelMembers.sectionsFound
+            );
         }
 
         /**
@@ -692,6 +993,11 @@ module.exports = (() => {
             
             const target = e.target;
 
+            const scrollers = DiscordClasses.Scrollers.scrollerWrap;
+            const scrollerMod = DiscordSelectors.Scrollers.scroller;
+            const selecto = DiscordSelectors.Scrollers.scrollerThemed;
+            const selecto2 = DiscordSelectors.Scrollers.themeGhostHairline;
+
             if(target.classList.contains("roleFilter")) {
                 return;
             } 
@@ -711,7 +1017,7 @@ module.exports = (() => {
             // replace non-numerical characters in the id
             roleId = roleId.replace(/\D/g,"");
 
-            this.filterByRoles(roleId, this.getRolesById);
+            this.addRoleToFilter(this.getRoleById(roleId));
         }
 
         /**
@@ -739,7 +1045,7 @@ module.exports = (() => {
          * @param {MouseEvent} e
          */
         handleAddButtonClick(e) {
-            const openPopouts = document.querySelectorAll(`.${classes.listContainer}`);
+            const openPopouts = document.querySelectorAll(`.${classes.popoutContainer}`);
 
             openPopouts.forEach(openPopout => openPopout.remove());
             
@@ -748,8 +1054,12 @@ module.exports = (() => {
                 align: "top",
                 spacing: 258,
                 animation: Popouts.AnimationTypes.TRANSLATE,
-                render: (p) => {
-                    return React.createElement(RolePopout, p);
+                render: () => {
+                    return React.createElement(RolePopout, {
+                        onRoleClick: this.addRoleToFilter,
+                        guildRoles: this.getAllRoles(),
+                        selectedRoles: this.filter && this.filter.roles
+                    });
                 }
             });
             
