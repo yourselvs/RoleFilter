@@ -1,11 +1,8 @@
 /**
  * @name RoleFilter
- * @invite undefined
- * @authorLink undefined
- * @donate undefined
- * @patreon undefined
  * @website https://github.com/yourselvs/RoleFilter
  * @source https://raw.githubusercontent.com/yourselvs/RoleFilter/main/release/RoleFilter.plugin.js
+ * @updateUrl https://raw.githubusercontent.com/yourselvs/RoleFilter/main/release/RoleFilter.plugin.js
  */
 /*@cc_on
 @if (@_jscript)
@@ -32,7 +29,7 @@
 @else@*/
 
 module.exports = (() => {
-    const config = {"info":{"name":"Role Filter","authors":[{"name":"yourselvs","discord_id":"110574243023966208","github_username":"yourselvs","twitter_username":""}],"version":"1.1.0","description":"Filter the user list by selected roles.","github":"https://github.com/yourselvs/RoleFilter","github_raw":"https://raw.githubusercontent.com/yourselvs/RoleFilter/main/release/RoleFilter.plugin.js"},"changelog":[{"title":"Compatibility update","items":["The plugin works again after the new discord update. Future updates should not break it as significantly."]},{"title":"Compatible with roles with duplicate names","type":"fixed","items":["Filtering on a role no longer pulls in roles with duplicate names."]}],"main":"index.js"};
+    const config = {"info":{"name":"Role Filter","authors":[{"name":"yourselvs","discord_id":"110574243023966208","github_username":"yourselvs","twitter_username":""}],"version":"1.2.0","description":"Filter the user list by selected roles.","github":"https://github.com/yourselvs/RoleFilter","github_raw":"https://raw.githubusercontent.com/yourselvs/RoleFilter/main/release/RoleFilter.plugin.js"},"changelog":[{"title":"New Feature: Add Any Role","items":["Filter on any role by clicking the plus button at the top of the member's list","Use the search bar to search for a specific role"]},{"title":"Less spam on big servers","type":"improved","items":["When you filter in a large channel, the warning message will pop up only once, rather than every time you click on a role","The warning message shows again once you change server/channel"]}],"main":"index.js"};
 
     return !global.ZeresPluginLibrary ? class {
         constructor() {this._config = config;}
@@ -137,6 +134,8 @@ module.exports = (() => {
     margin-bottom: 8px;
     background: var(--background-secondary);
     border-radius: 4px;
+    border: 1px solid transparent;
+    transition: 50ms ease-out;
 }
 
 .roleFilter-listOption:last-of-type {
@@ -145,6 +144,13 @@ module.exports = (() => {
 
 .roleFilter-listOption.selected {
     background: var(--background-secondary-alt);
+    border: 1px solid var(--background-accent);
+}
+
+.roleFilter-listOption.selected:hover {
+    background: var(--background-tertiary);
+    border: 1px solid var(--brand-experiment);
+    cursor: pointer;
 }
 
 .roleFilter-btnContainer {
@@ -347,7 +353,8 @@ module.exports = (() => {
     }
 
     /**
-     * @property {() => void} onRoleClick Called when a role in the popout list is clicked
+     * @property {() => void} onRoleSelect Called when a role in the popout list is selected
+     * @property {() => void} onRoleDeselect Called when a role in the popout list is deselected
      * @property {Role[]} guildRoles List of roles in the currently selected guild
      * @property {Role[]} selectedRoles List of roles applied by the filter
      */
@@ -370,7 +377,8 @@ module.exports = (() => {
                     onChange: this.onSearch
                 }),
                 React.createElement(RoleList, {
-                    onRoleClick: this.props.onRoleClick,
+                    onRoleSelect: this.props.onRoleSelect,
+                    onRoleDeselect: this.props.onRoleDeselect,
                     guildRoles: this.props.guildRoles,
                     selectedRoles: this.props.selectedRoles,
                     searchValue: this.state.searchValue
@@ -386,7 +394,7 @@ module.exports = (() => {
     }
 
     /**
-     * @property {() => void} onChange Called when the input value is changed
+     * @property {(string) => void} onChange Called when the input value is changed
      */
     const RoleSearch = class RoleSearch extends React.Component {
         render() {
@@ -405,7 +413,8 @@ module.exports = (() => {
     }
 
     /**
-     * @property {() => void} onRoleClick Called when a role in the popout list is clicked
+     * @property {(Role) => void} onRoleSelect Called when a role in the popout list is selected
+     * @property {(Role) => void} onRoleDeselect Called when a role in the popout list is deselected
      * @property {Role[]} guildRoles List of roles in the currently selected guild
      * @property {Role[]} selectedRoles List of roles applied by the filter
      * @property {string} searchValue Value that the role names must include to show up in the list
@@ -455,11 +464,23 @@ module.exports = (() => {
         }
 
         /**
+         * Selects or deselects a role that was clicked.
+         * @param {Role} role Role object to add to state and filter
+         * @param {boolean} selected True if the role is currently selected. False otherwise
+         */
+        onRoleClick(role, selected) {
+            if (selected)
+                this.deselectRole(role);
+            else
+                this.selectRole(role);
+        }
+
+        /**
          * Adds role to the selectedRoles state.
          * Fires callback to add role to plugin state.
          * @param {Role} role Role object to add to state and filter
          */
-        onRoleClick(role) {
+        selectRole(role) {
             let roles = this.state.selectedRoles;
 
             if(!roles)
@@ -471,7 +492,24 @@ module.exports = (() => {
                 selectedRoles: roles
             });
 
-            this.props.onRoleClick(role);
+            this.props.onRoleSelect(role);
+        }
+
+        /**
+         * Removes role from the selectedRoles state.
+         * Fires callback to remove role from plugin state.
+         * @param {Role} role Role object to remove from state and filter
+         */
+        deselectRole(role) {
+            let roles = this.state.selectedRoles.filter(selectedRole => {
+                return role.id !== selectedRole.id;
+            })
+
+            this.setState({
+                selectedRoles: roles
+            })
+
+            this.props.onRoleDeselect(role);
         }
 
         /**
@@ -488,6 +526,7 @@ module.exports = (() => {
     }
 
     /**
+     * @property {(Role, boolean) => void} onClick Called when the option is clicked on
      * @property {Role} role The role to construct the list option from
      * @property {boolean} selected Whether or not the list option is selected in the filter
      */
@@ -509,7 +548,7 @@ module.exports = (() => {
         }
 
         onClick() {
-            this.props.onClick(this.props.role);
+            this.props.onClick(this.props.role, this.props.selected);
         }
     }
 
@@ -559,6 +598,7 @@ module.exports = (() => {
         onSwitch() {
             this.resetFilter();
             this.updateMemberList();
+            this.showedWarning = false;
         }
 
         /**
@@ -844,7 +884,7 @@ module.exports = (() => {
             }).map(member => member.user.id); // return id, not member object
 
             if (this.channel.rows.length >= 100) {
-                Toasts.warning("This channel is large (approx. 100+ members). It's possible that not every member you're searching for will be found.");
+                this.showLargeChannelWarning();
             }
 
             return {
@@ -854,6 +894,13 @@ module.exports = (() => {
                 sectionsFound,
                 membersFound
             }
+        }
+
+        showLargeChannelWarning() {
+            if(this.showedWarning) return;
+
+            Toasts.warning("This channel is large (approx. 100+ members). It's possible that not every member you're searching for will be found.");
+            this.showedWarning = true;
         }
 
         /**
@@ -1056,7 +1103,8 @@ module.exports = (() => {
                 animation: Popouts.AnimationTypes.TRANSLATE,
                 render: () => {
                     return React.createElement(RolePopout, {
-                        onRoleClick: this.addRoleToFilter,
+                        onRoleSelect: this.addRoleToFilter,
+                        onRoleDeselect: (role) => this.removeRoleFromFilter(role.id),
                         guildRoles: this.getAllRoles(),
                         selectedRoles: this.filter && this.filter.roles
                     });

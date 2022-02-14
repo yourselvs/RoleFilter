@@ -7,23 +7,25 @@
             "github_username": "yourselvs",
             "twitter_username": ""
         }],
-        "version": "1.1.0",
+        "version": "1.2.0",
         "description": "Filter the user list by selected roles.",
         "github": "https://github.com/yourselvs/RoleFilter",
         "github_raw": "https://raw.githubusercontent.com/yourselvs/RoleFilter/main/release/RoleFilter.plugin.js"
     },
     "changelog": [
         {
-            "title": "Compatibility update",
+            "title": "New Feature: Add Any Role", 
             "items": [
-                "The plugin works again after the new discord update. Future updates should not break it as significantly."
+                "Filter on any role by clicking the plus button at the top of the member's list", 
+                "Use the search bar to search for a specific role"
             ]
         },
         {
-            "title": "Compatible with roles with duplicate names",
-            "type": "fixed",
+            "title": "Less spam on big servers",
+            "type": "improved",
             "items": [
-                "Filtering on a role no longer pulls in roles with duplicate names."
+                "When you filter in a large channel, the warning message will pop up only once, rather than every time you click on a role",
+                "The warning message shows again once you change server/channel"
             ]
         }
     ],

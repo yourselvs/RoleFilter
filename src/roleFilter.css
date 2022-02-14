@@ -74,6 +74,8 @@
     margin-bottom: 8px;
     background: var(--background-secondary);
     border-radius: 4px;
+    border: 1px solid transparent;
+    transition: 50ms ease-out;
 }
 
 .roleFilter-listOption:last-of-type {
@@ -82,6 +84,13 @@
 
 .roleFilter-listOption.selected {
     background: var(--background-secondary-alt);
+    border: 1px solid var(--background-accent);
+}
+
+.roleFilter-listOption.selected:hover {
+    background: var(--background-tertiary);
+    border: 1px solid var(--brand-experiment);
+    cursor: pointer;
 }
 
 .roleFilter-btnContainer {
