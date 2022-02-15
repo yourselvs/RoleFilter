@@ -7,23 +7,43 @@
             "github_username": "yourselvs",
             "twitter_username": ""
         }],
-        "version": "1.1.0",
+        "version": "1.2.0",
         "description": "Filter the user list by selected roles.",
         "github": "https://github.com/yourselvs/RoleFilter",
         "github_raw": "https://raw.githubusercontent.com/yourselvs/RoleFilter/main/release/RoleFilter.plugin.js"
     },
     "changelog": [
         {
-            "title": "Compatibility update",
+            "title": "New Feature: Add Any Role", 
             "items": [
-                "The plugin works again after the new discord update. Future updates should not break it as significantly."
+                "Filter on any role by clicking the plus button at the top of the member's list.", 
+                "Use the search bar to search for a specific role.",
+                "This button can ge removed completely by toggling it in the settings."
             ]
         },
         {
-            "title": "Compatible with roles with duplicate names",
+            "title": "Toggle Roles",
+            "type": "improved",
+            "items": [
+                "Clicking on a role mention or a user's role will toggle, rather than just adding to the filter",
+                "You no longer need to click in the filter area to de-select a role"
+            ]
+        },
+        {
+            "title": "New Settings Panel",
+            "type": "improved",
+            "items": [
+                "A settings panel for the plugin has been added.",
+                "The warning for large channels and the new button can both be disabled."
+            ]
+        },
+        {
+            "title": "Less spam on big servers",
             "type": "fixed",
             "items": [
-                "Filtering on a role no longer pulls in roles with duplicate names."
+                "Role Filter has limitations on channels with more than 100 members.",
+                "When you filter in a large channel, a warning message will pop up only once, rather than every time you click on a role.",
+                "The warning message shows again once you change server/channel."
             ]
         }
     ],

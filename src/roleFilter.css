@@ -1,0 +1,117 @@
+/* Prevent the scrollbar from rendering while the filter is active */
+.roleFilterWrap::-webkit-scrollbar { 
+    display: none; 
+} 
+
+.roleFilter-header {
+    padding: 22px 8px 0px 16px;
+}
+
+.roleFilter-addBtn { 
+    fill: var(--interactive-normal);
+    width: 16px;
+    height: 20px;
+    cursor: pointer;
+} 
+
+.roleFilter-addBtn:hover { 
+    fill: var(--interactive-hover);
+}
+
+.roleFilter-addBtnPath {
+    transform: scale(0.03125) rotate(45deg);
+    transform-origin: 8px 0px;
+}
+
+.roleFilter-popoutContainer {
+    width: 250px;
+    height: 400px;
+    padding: 8px;
+    overflow: hidden;
+    border-radius: 4px;
+    border: 1px solid var(--background-modifier-accent);
+    background-color: var(--background-primary);
+    box-sizing: border-box;
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.roleFilter-listContainer {
+    width: 100%;
+    height: calc(100% - 46px);
+    overflow-y: scroll;
+    border-radius: 4px;
+}
+
+.roleFilter-listContainer::-webkit-scrollbar { 
+    display: none; 
+} 
+
+.roleFilter-searchContainer {
+    width: 100%;
+    background: var(--background-tertiary);
+    margin-bottom: 10px;
+    border-radius: 4px;
+    padding: 1px 0px;
+    cursor: text;
+}
+
+.roleFilter-searchInput {
+    font-size: 16px;
+    height: 34px;
+    width: calc(100% - 42px);
+    padding: 0 8px;
+    background: none;
+    border: none;
+    color: var(--text-normal);
+}
+
+.roleFilter-listOption {
+    padding: 8px;
+    margin-bottom: 8px;
+    background: var(--background-secondary);
+    border-radius: 4px;
+    border: 1px solid transparent;
+    transition: 50ms ease-out;
+}
+
+.roleFilter-listOption:last-of-type {
+    margin-bottom: 0;
+}
+
+.roleFilter-listOption.selected {
+    background: var(--background-secondary-alt);
+    border: 1px solid var(--background-accent);
+}
+
+.roleFilter-listOption.selected:hover {
+    background: var(--background-tertiary);
+    border: 1px solid var(--brand-experiment);
+    cursor: pointer;
+}
+
+.roleFilter-btnContainer {
+    width: 100%;
+}
+
+.roleFilter-btnPadding {
+    padding-bottom: 6px;
+}
+
+.roleFilter-role {
+    margin: 4px 4px 0px 0px;
+}
+
+.roleFilter-searchIcon {
+    position: relative;
+    top: 4px;
+    fill: var(--interactive-normal);
+    width: 16px;
+    height: 20px;
+    cursor: text;
+}
+
+.roleFilter-searchPath {
+    transform: scale(1.13);
+    transform-origin: 16px 4px;
+}
