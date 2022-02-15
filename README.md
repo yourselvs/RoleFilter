@@ -27,3 +27,7 @@ Role Filter allows you to use Discord's roles to search for users. You can navig
 ## Contributing
 
 Put a PR in. Please have readable code.
+
+---
+
+### Built using [ZeresPluginLibrary](https://betterdiscord.app/plugin/ZeresPluginLibrary)
