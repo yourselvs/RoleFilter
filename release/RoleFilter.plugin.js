@@ -1,5 +1,6 @@
 /**
  * @name RoleFilter
+ * @description Role Filter allows you to use Discord's roles to search for users.
  * @website https://github.com/yourselvs/RoleFilter
  * @source https://raw.githubusercontent.com/yourselvs/RoleFilter/main/release/RoleFilter.plugin.js
  * @updateUrl https://raw.githubusercontent.com/yourselvs/RoleFilter/main/release/RoleFilter.plugin.js
