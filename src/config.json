@@ -25,8 +25,8 @@
             "title": "Toggle Roles",
             "type": "improved",
             "items": [
-                "Clicking on a role mention or a user's role will toggle, rather than just adding to the filter",
-                "You no longer need to click in the filter area to de-select a role"
+                "Clicking on a role mention or a user's role will toggle, rather than just adding to the filter.",
+                "You no longer need to click in the filter area to de-select a role."
             ]
         },
         {
