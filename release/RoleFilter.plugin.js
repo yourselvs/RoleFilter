@@ -1,11 +1,8 @@
 /**
  * @name RoleFilter
- * @invite undefined
- * @authorLink undefined
- * @donate undefined
- * @patreon undefined
  * @website https://github.com/yourselvs/RoleFilter
  * @source https://raw.githubusercontent.com/yourselvs/RoleFilter/main/release/RoleFilter.plugin.js
+ * @updateUrl https://raw.githubusercontent.com/yourselvs/RoleFilter/main/release/RoleFilter.plugin.js
  */
 /*@cc_on
 @if (@_jscript)
@@ -593,7 +590,6 @@ module.exports = (() => {
             this.handleRoleFilterClick = this.handleRoleFilterClick.bind(this);
 
             this.getRoleById = this.getRoleById.bind(this);
-            this.getRolesByName = this.getRolesByName.bind(this);
             this.addRoleToFilter = this.addRoleToFilter.bind(this);
 
             this.useAnd = true;
@@ -746,13 +742,12 @@ module.exports = (() => {
             const RoleMention = WebpackModules.getModule(m => m && m.default.displayName === "RoleMention");
             
             Patcher.after(RoleMention, "default", (_, [props], component) => {
-                if (!component || !component.props || !component.props.className ||
-                    !component.props.className.toLowerCase().includes("mention")) return;
+                if (!component || !component.props || !props || props.type !== "mention") return;
 
-                const roles = this.getRolesByName(component.props.children[0].slice(1));
+                const role = this.getRoleById(props.roleId);
 
                 component.props.className += " interactive";
-                component.props.onClick = (e) => this.addRolesToFilter(roles);
+                component.props.onClick = (e) => this.addRoleToFilter(role);
             });
         }
 
@@ -951,26 +946,6 @@ module.exports = (() => {
             Toasts.warning("This channel is large (approx. 100+ members). It's possible that not every member you're searching for will be found.");
             this.showedWarning = true;
         }
-
-        /**
-         * Gets all roles in the current guild whose name matches the passed in parameter.
-         * @param {string} roleName 
-         * @returns {Role[]} List of roles that match the passed name
-         */
-        getRolesByName(roleName) {
-            const guildRoles = this.getAllRoles();
-
-            const roles = [];
-
-            // roles is not an array >:( so we have to iterate through keys
-            for (const role in guildRoles) {
-                if(role.name && roleName === role.name) {
-                    roles.push(role);
-                }
-            }
-
-            return roles;
-        }
         
         /**
          * Gets role from the current guild with matching id.
@@ -1018,29 +993,21 @@ module.exports = (() => {
         }
 
         /**
-         * Wraps a single role in an array and passes it off to new function
+         * Adds a role to the filter and updates the member list.
+         * Creates a new filter if not already filtering.
          * @param {Role} newRole Role to add to filter
          */
         addRoleToFilter(newRole) {
-            this.addRolesToFilter([newRole]);
-        }
-
-        /**
-         * Adds a list of roles to the filter and updates the member list.
-         * Creates a new filter if not already filtering.
-         * @param {Role[]} newRoles List of roles to add
-         */
-        addRolesToFilter(newRoles) {
             if (this.filter) {
-                this.filter.roles = this.filter.roles.concat(
-                    // Don't add the role to the filter if it's already in there
-                    newRoles.filter(newRole => !this.filter.roles.some(role => role.id === newRole.id))
-                );
+                if(!this.filter.roles.some(role => role.id === newRole.id)) {
+                    this.filter.roles.push(newRole);
+                }
+                
                 this.setFilter(this.filter.roles);
             }
-
-            else
-                this.setFilter(newRoles);
+            else {
+                this.setFilter([newRole]);
+            }
 
             this.updateMemberList();
         }
