@@ -36,11 +36,6 @@
     flex-wrap: wrap;
 }
 
-/* Hide  */
-.roleFilter-popoutContainer::-webkit-scrollbar { 
-    display: none; 
-} 
-
 .roleFilter-listContainer {
     width: 100%;
     height: calc(100% - 46px);
@@ -58,11 +53,13 @@
     margin-bottom: 10px;
     border-radius: 4px;
     padding: 1px 0px;
+    cursor: text;
 }
 
 .roleFilter-searchInput {
     font-size: 16px;
     height: 34px;
+    width: calc(100% - 42px);
     padding: 0 8px;
     background: none;
     border: none;
@@ -103,4 +100,18 @@
 
 .roleFilter-role {
     margin: 4px 4px 0px 0px;
+}
+
+.roleFilter-searchIcon {
+    position: relative;
+    top: 4px;
+    fill: var(--interactive-normal);
+    width: 16px;
+    height: 20px;
+    cursor: text;
+}
+
+.roleFilter-searchPath {
+    transform: scale(1.13);
+    transform-origin: 16px 4px;
 }

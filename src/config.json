@@ -16,16 +16,26 @@
         {
             "title": "New Feature: Add Any Role", 
             "items": [
-                "Filter on any role by clicking the plus button at the top of the member's list", 
-                "Use the search bar to search for a specific role"
+                "Filter on any role by clicking the plus button at the top of the member's list.", 
+                "Use the search bar to search for a specific role.",
+                "This button can ge removed completely by toggling it in the settings."
             ]
         },
         {
             "title": "Less spam on big servers",
+            "type": "fixed",
+            "items": [
+                "Role Filter has limitations on channels with more than 100 members.",
+                "When you filter in a large channel, a warning message will pop up only once, rather than every time you click on a role.",
+                "The warning message shows again once you change server/channel."
+            ]
+        },
+        {
+            "title": "New Settings Panel",
             "type": "improved",
             "items": [
-                "When you filter in a large channel, the warning message will pop up only once, rather than every time you click on a role",
-                "The warning message shows again once you change server/channel"
+                "A settings panel for the plugin has been added.",
+                "The warning for large channels and the new button can both be disabled."
             ]
         }
     ],

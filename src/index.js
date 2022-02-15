@@ -1,9 +1,10 @@
 module.exports = (Plugin, Library) => {
-    const { DiscordClasses, DiscordClassModules, DiscordModules, DiscordSelectors, Logger, Patcher, PluginUtilities, Popouts, ReactTools, Toasts, Tooltip, WebpackModules } = Library;
+    const { DiscordClasses, DiscordClassModules, DiscordModules, DiscordSelectors, Logger, Patcher, PluginUtilities, Popouts, ReactTools, Settings, Toasts, Tooltip, WebpackModules } = Library;
 
     const { GuildStore, React } = DiscordModules;
 
-    const path = require("path.txt");
+    const plusPath = require("plusPath.txt");
+    const searchPath = require("searchPath.txt");
     const roleFilterCss = require("roleFilter.css");
 
     const Lists = WebpackModules.getByProps("ListThin");
@@ -23,7 +24,9 @@ module.exports = (Plugin, Library) => {
         btnContainer: "roleFilter-btnContainer",
         btnPadding: "roleFilter-btnPadding",
         addBtn: "roleFilter-addBtn",
-        addBtnPath: "roleFilter-addBtnPath"
+        addBtnPath: "roleFilter-addBtnPath",
+        searchIcon: "roleFilter-searchIcon",
+        searchPath: "roleFilter-searchPath"
     }
 
     const memberHeight = 44,
@@ -162,7 +165,7 @@ module.exports = (Plugin, Library) => {
                 },
                     React.createElement("path", {
                         className: classes.addBtnPath,
-                        d: path
+                        d: plusPath
                     })
                 )
             );
@@ -173,21 +176,23 @@ module.exports = (Plugin, Library) => {
      * @property {() => void} onAddButtonClick Called when the "add role" button is clicked
      * @property {() => void} onRoleClick Called when a role pill in the filter list is clicked
      * @property {Filter} filter The plugin's current filter state
+     * @property {boolean} showAddRoleButton
      */
     const RoleHeader = class RoleHeader extends React.Component {
         render() {
-            const containerClass = `${classes.roleRoot} ${classes.header}`;
+            const showPadding = !!(this.props.showAddRoleButton || this.props.filter);
+            const containerClass = `${classes.roleRoot} ${showPadding && classes.header}`;
 
             return React.createElement("div", {
                 className: containerClass
             },
-                React.createElement(AddRoleButton, {
+                this.props.showAddRoleButton ? React.createElement(AddRoleButton, {
                     onClick: this.props.onAddButtonClick,
                     usePadding: !!this.props.filter
-                }),
+                }) : null,
                 React.createElement(RoleFilterList, {
                     filter: this.props.filter,
-                    onClick: this.props.onRoleClick
+                    onClick: this.props.onRoleClick,
                 })
             );
         }        
@@ -244,11 +249,20 @@ module.exports = (Plugin, Library) => {
             },
                 React.createElement("input", {
                     className: classes.searchInput,
-                    placeholder: "Search Roles...",
+                    placeholder: "Search Roles",
                     onChange: this.props.onChange,
                     autoFocus: true,
                     onFocus: e => e.target.select()
-                })
+                }),
+                React.createElement("svg", {
+                    className: classes.searchIcon,
+                    onClick: this.onClick
+                },
+                    React.createElement("path", {
+                        className: classes.searchPath,
+                        d: searchPath
+                    })
+                )
             );
         }
     }
@@ -397,6 +411,10 @@ module.exports = (Plugin, Library) => {
         constructor() {
             super();
 
+            this.defaultSettings = {};
+            this.defaultSettings.showAddRoleButton = true;
+            this.defaultSettings.showLargeChannelWarning = true;
+
             this.handleRolePillClick = this.handleRolePillClick.bind(this);
             this.handleAddButtonClick = this.handleAddButtonClick.bind(this);
             this.handleRoleFilterClick = this.handleRoleFilterClick.bind(this);
@@ -439,7 +457,24 @@ module.exports = (Plugin, Library) => {
         onSwitch() {
             this.resetFilter();
             this.updateMemberList();
+            this.closePopouts();
             this.showedWarning = false;
+        }
+
+        getSettingsPanel() {
+            return Settings.SettingPanel.build(this.saveSettings.bind(this), 
+                new Settings.Switch(
+                    "Show \"Add Role\" Button", 
+                    "Display a button to add roles to the filter at the top of the members list. Even when disabled, roles can still be filtered by clicking on a user and their roles.",
+                    this.settings.showAddRoleButton, 
+                    (e) => {this.settings.showAddRoleButton = e;}
+                ),
+                new Settings.Switch(
+                    "Show Large Channel Warning", 
+                    "When enabled, displays a warning when using Role Filter on channels with 100+ members. Role Filter does not always show all members in channels over 100 members.", 
+                    this.settings.showLargeChannelWarning, 
+                    (e) => {this.settings.showLargeChannelWarning = e;})
+            );
         }
 
         /**
@@ -738,7 +773,7 @@ module.exports = (Plugin, Library) => {
         }
 
         showLargeChannelWarning() {
-            if(this.showedWarning) return;
+            if(this.showedWarning || !this.settings.showLargeChannelWarning) return;
 
             Toasts.warning("This channel is large (approx. 100+ members). It's possible that not every member you're searching for will be found.");
             this.showedWarning = true;
@@ -864,7 +899,8 @@ module.exports = (Plugin, Library) => {
             const roleHeader = React.createElement(RoleHeader, {
                 onAddButtonClick: this.handleAddButtonClick,
                 onRoleClick: this.handleRoleFilterClick,
-                filter: this.filter
+                filter: this.filter,
+                showAddRoleButton: this.settings.showAddRoleButton
             });
 
             membersListElem.props.children.unshift(roleHeader);
@@ -880,11 +916,6 @@ module.exports = (Plugin, Library) => {
             let roleId = "";
             
             const target = e.target;
-
-            const scrollers = DiscordClasses.Scrollers.scrollerWrap;
-            const scrollerMod = DiscordSelectors.Scrollers.scroller;
-            const selecto = DiscordSelectors.Scrollers.scrollerThemed;
-            const selecto2 = DiscordSelectors.Scrollers.themeGhostHairline;
 
             if(target.classList.contains("roleFilter")) {
                 return;
@@ -933,9 +964,7 @@ module.exports = (Plugin, Library) => {
          * @param {MouseEvent} e
          */
         handleAddButtonClick(e) {
-            const openPopouts = document.querySelectorAll(`.${classes.popoutContainer}`);
-
-            openPopouts.forEach(openPopout => openPopout.remove());
+            this.closePopouts();
             
             Popouts.openPopout(e.target, {
                 position: "left",
@@ -953,6 +982,15 @@ module.exports = (Plugin, Library) => {
             });
             
             if (e.stopPropagation) e.stopPropagation();
+        }
+
+        /**
+         * Closes all open Role Filter popouts.
+         */
+        closePopouts() {
+            const openPopouts = document.querySelectorAll(`.${classes.popoutContainer}`);
+
+            openPopouts.forEach(openPopout => openPopout.remove());
         }
         
         /**
