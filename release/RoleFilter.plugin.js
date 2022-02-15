@@ -3,6 +3,7 @@
  * @website https://github.com/yourselvs/RoleFilter
  * @source https://raw.githubusercontent.com/yourselvs/RoleFilter/main/release/RoleFilter.plugin.js
  * @updateUrl https://raw.githubusercontent.com/yourselvs/RoleFilter/main/release/RoleFilter.plugin.js
+ * @version 1.2.0
  */
 /*@cc_on
 @if (@_jscript)
