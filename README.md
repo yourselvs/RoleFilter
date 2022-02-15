@@ -13,6 +13,7 @@ Role Filter allows you to use Discord's roles to search for users. You can navig
 
 ## Known issues
 - Does not work in threads
+- Some compatibility issues with themes
 - Scrollbars don't always show up when filtering, or in the role popout
 - Not always correct in channels with 100+ members
   - Due to Discord's lazy-loading, Role Filter can only look at the first 100 members in a channel
