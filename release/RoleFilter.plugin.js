@@ -29,7 +29,7 @@
 @else@*/
 
 module.exports = (() => {
-    const config = {"info":{"name":"Role Filter","authors":[{"name":"yourselvs","discord_id":"110574243023966208","github_username":"yourselvs","twitter_username":""}],"version":"1.2.0","description":"Filter the user list by selected roles.","github":"https://github.com/yourselvs/RoleFilter","github_raw":"https://raw.githubusercontent.com/yourselvs/RoleFilter/main/release/RoleFilter.plugin.js"},"changelog":[{"title":"New Feature: Add Any Role","items":["Filter on any role by clicking the plus button at the top of the member's list.","Use the search bar to search for a specific role.","This button can ge removed completely by toggling it in the settings."]},{"title":"Less spam on big servers","type":"fixed","items":["Role Filter has limitations on channels with more than 100 members.","When you filter in a large channel, a warning message will pop up only once, rather than every time you click on a role.","The warning message shows again once you change server/channel."]},{"title":"New Settings Panel","type":"improved","items":["A settings panel for the plugin has been added.","The warning for large channels and the new button can both be disabled."]}],"main":"index.js"};
+    const config = {"info":{"name":"Role Filter","authors":[{"name":"yourselvs","discord_id":"110574243023966208","github_username":"yourselvs","twitter_username":""}],"version":"1.2.0","description":"Filter the user list by selected roles.","github":"https://github.com/yourselvs/RoleFilter","github_raw":"https://raw.githubusercontent.com/yourselvs/RoleFilter/main/release/RoleFilter.plugin.js"},"changelog":[{"title":"New Feature: Add Any Role","items":["Filter on any role by clicking the plus button at the top of the member's list.","Use the search bar to search for a specific role.","This button can ge removed completely by toggling it in the settings."]},{"title":"Toggle Roles","type":"improved","items":["Clicking on a role mention or a user's role will toggle, rather than just adding to the filter","You no longer need to click in the filter area to de-select a role"]},{"title":"New Settings Panel","type":"improved","items":["A settings panel for the plugin has been added.","The warning for large channels and the new button can both be disabled."]},{"title":"Less spam on big servers","type":"fixed","items":["Role Filter has limitations on channels with more than 100 members.","When you filter in a large channel, a warning message will pop up only once, rather than every time you click on a role.","The warning message shows again once you change server/channel."]}],"main":"index.js"};
 
     return !global.ZeresPluginLibrary ? class {
         constructor() {this._config = config;}
@@ -634,9 +634,12 @@ module.exports = (() => {
             return Settings.SettingPanel.build(this.saveSettings.bind(this), 
                 new Settings.Switch(
                     "Show \"Add Role\" Button", 
-                    "Display a button to add roles to the filter at the top of the members list. Even when disabled, roles can still be filtered by clicking on a user and their roles.",
+                    "Display a button to add roles to the filter at the top of the members list.",
                     this.settings.showAddRoleButton, 
-                    (e) => {this.settings.showAddRoleButton = e;}
+                    (e) => {
+                        this.settings.showAddRoleButton = e;
+                        this.updateMemberList();
+                    }
                 ),
                 new Settings.Switch(
                     "Show Large Channel Warning", 
@@ -674,17 +677,6 @@ module.exports = (() => {
             this.guildId = "";
             this.allRoles = null;
             this.filter = null;
-            this.updateMemberList();
-        }
-
-        /**
-         * Removes the id from the filter, if it exists.
-         * @param {string} roleId ID of the role to remove
-         */
-        removeRoleFromFilter(roleId) {
-            if (!this.filter) return;
-            this.filter.roles = this.filter.roles.filter(role => role.id != roleId);
-            this.setFilter(this.filter.roles);
             this.updateMemberList();
         }
 
@@ -747,7 +739,7 @@ module.exports = (() => {
                 const role = this.getRoleById(props.roleId);
 
                 component.props.className += " interactive";
-                component.props.onClick = (e) => this.addRoleToFilter(role);
+                component.props.onClick = (e) => this.toggleRole(role);
             });
         }
 
@@ -993,6 +985,23 @@ module.exports = (() => {
         }
 
         /**
+         * Toggle a role in the filter list.
+         * @param {Role} role Role to toggle
+         */
+        toggleRole(role) {
+            if (!this.filter) {
+                this.setFilter([role]);
+                this.updateMemberList();
+            }
+            else if (this.filter.roles.some(filterRole => filterRole.id === role.id)) {
+                this.removeRoleFromFilter(role.id);
+            }
+            else {
+                this.addRoleToFilter(role);
+            }
+        }
+
+        /**
          * Adds a role to the filter and updates the member list.
          * Creates a new filter if not already filtering.
          * @param {Role} newRole Role to add to filter
@@ -1008,7 +1017,18 @@ module.exports = (() => {
             else {
                 this.setFilter([newRole]);
             }
+            
+            this.updateMemberList();
+        }
 
+        /**
+         * Removes the id from the filter, if it exists.
+         * @param {string} roleId ID of the role to remove
+         */
+         removeRoleFromFilter(roleId) {
+            if (!this.filter) return;
+            this.filter.roles = this.filter.roles.filter(role => role.id != roleId);
+            this.setFilter(this.filter.roles);
             this.updateMemberList();
         }
 
@@ -1018,14 +1038,19 @@ module.exports = (() => {
          * @param {*} channelMembers Object which contains information on the filter
          */
         setFilter(roles) {
-            const channelMembers = this.getAllowedMembers(roles, this.useAnd);
-            this.filter = new Filter(
-                roles,
-                channelMembers.membersList,
-                channelMembers.groupList,
-                channelMembers.membersFound,
-                channelMembers.sectionsFound
-            );
+            if (!Array.isArray(roles) || !roles.length) {
+                this.filter = null;
+            }
+            else {
+                const channelMembers = this.getAllowedMembers(roles, this.useAnd);
+                this.filter = new Filter(
+                    roles,
+                    channelMembers.membersList,
+                    channelMembers.groupList,
+                    channelMembers.membersFound,
+                    channelMembers.sectionsFound
+                );
+            }
         }
 
         /**
@@ -1076,7 +1101,7 @@ module.exports = (() => {
             // replace non-numerical characters in the id
             roleId = roleId.replace(/\D/g,"");
 
-            this.addRoleToFilter(this.getRoleById(roleId));
+            this.toggleRole(this.getRoleById(roleId));
         }
 
         /**

@@ -464,9 +464,12 @@ module.exports = (Plugin, Library) => {
             return Settings.SettingPanel.build(this.saveSettings.bind(this), 
                 new Settings.Switch(
                     "Show \"Add Role\" Button", 
-                    "Display a button to add roles to the filter at the top of the members list. Even when disabled, roles can still be filtered by clicking on a user and their roles.",
+                    "Display a button to add roles to the filter at the top of the members list.",
                     this.settings.showAddRoleButton, 
-                    (e) => {this.settings.showAddRoleButton = e;}
+                    (e) => {
+                        this.settings.showAddRoleButton = e;
+                        this.updateMemberList();
+                    }
                 ),
                 new Settings.Switch(
                     "Show Large Channel Warning", 
@@ -504,17 +507,6 @@ module.exports = (Plugin, Library) => {
             this.guildId = "";
             this.allRoles = null;
             this.filter = null;
-            this.updateMemberList();
-        }
-
-        /**
-         * Removes the id from the filter, if it exists.
-         * @param {string} roleId ID of the role to remove
-         */
-        removeRoleFromFilter(roleId) {
-            if (!this.filter) return;
-            this.filter.roles = this.filter.roles.filter(role => role.id != roleId);
-            this.setFilter(this.filter.roles);
             this.updateMemberList();
         }
 
@@ -577,7 +569,7 @@ module.exports = (Plugin, Library) => {
                 const role = this.getRoleById(props.roleId);
 
                 component.props.className += " interactive";
-                component.props.onClick = (e) => this.addRoleToFilter(role);
+                component.props.onClick = (e) => this.toggleRole(role);
             });
         }
 
@@ -823,6 +815,23 @@ module.exports = (Plugin, Library) => {
         }
 
         /**
+         * Toggle a role in the filter list.
+         * @param {Role} role Role to toggle
+         */
+        toggleRole(role) {
+            if (!this.filter) {
+                this.setFilter([role]);
+                this.updateMemberList();
+            }
+            else if (this.filter.roles.some(filterRole => filterRole.id === role.id)) {
+                this.removeRoleFromFilter(role.id);
+            }
+            else {
+                this.addRoleToFilter(role);
+            }
+        }
+
+        /**
          * Adds a role to the filter and updates the member list.
          * Creates a new filter if not already filtering.
          * @param {Role} newRole Role to add to filter
@@ -838,7 +847,18 @@ module.exports = (Plugin, Library) => {
             else {
                 this.setFilter([newRole]);
             }
+            
+            this.updateMemberList();
+        }
 
+        /**
+         * Removes the id from the filter, if it exists.
+         * @param {string} roleId ID of the role to remove
+         */
+         removeRoleFromFilter(roleId) {
+            if (!this.filter) return;
+            this.filter.roles = this.filter.roles.filter(role => role.id != roleId);
+            this.setFilter(this.filter.roles);
             this.updateMemberList();
         }
 
@@ -848,14 +868,19 @@ module.exports = (Plugin, Library) => {
          * @param {*} channelMembers Object which contains information on the filter
          */
         setFilter(roles) {
-            const channelMembers = this.getAllowedMembers(roles, this.useAnd);
-            this.filter = new Filter(
-                roles,
-                channelMembers.membersList,
-                channelMembers.groupList,
-                channelMembers.membersFound,
-                channelMembers.sectionsFound
-            );
+            if (!Array.isArray(roles) || !roles.length) {
+                this.filter = null;
+            }
+            else {
+                const channelMembers = this.getAllowedMembers(roles, this.useAnd);
+                this.filter = new Filter(
+                    roles,
+                    channelMembers.membersList,
+                    channelMembers.groupList,
+                    channelMembers.membersFound,
+                    channelMembers.sectionsFound
+                );
+            }
         }
 
         /**
@@ -906,7 +931,7 @@ module.exports = (Plugin, Library) => {
             // replace non-numerical characters in the id
             roleId = roleId.replace(/\D/g,"");
 
-            this.addRoleToFilter(this.getRoleById(roleId));
+            this.toggleRole(this.getRoleById(roleId));
         }
 
         /**

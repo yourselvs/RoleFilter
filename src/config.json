@@ -22,12 +22,11 @@
             ]
         },
         {
-            "title": "Less spam on big servers",
-            "type": "fixed",
+            "title": "Toggle Roles",
+            "type": "improved",
             "items": [
-                "Role Filter has limitations on channels with more than 100 members.",
-                "When you filter in a large channel, a warning message will pop up only once, rather than every time you click on a role.",
-                "The warning message shows again once you change server/channel."
+                "Clicking on a role mention or a user's role will toggle, rather than just adding to the filter",
+                "You no longer need to click in the filter area to de-select a role"
             ]
         },
         {
@@ -36,6 +35,15 @@
             "items": [
                 "A settings panel for the plugin has been added.",
                 "The warning for large channels and the new button can both be disabled."
+            ]
+        },
+        {
+            "title": "Less spam on big servers",
+            "type": "fixed",
+            "items": [
+                "Role Filter has limitations on channels with more than 100 members.",
+                "When you filter in a large channel, a warning message will pop up only once, rather than every time you click on a role.",
+                "The warning message shows again once you change server/channel."
             ]
         }
     ],
