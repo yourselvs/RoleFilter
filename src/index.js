@@ -531,7 +531,10 @@ module.exports = (Plugin, Library) => {
          */
         patchMemberListButton(patch = true) {
             if (patch) document.querySelector('div[aria-label="Hide Member List"]').onmousedown = (e) => {
-                if (e.which == 3) this.openPopout(e.target);
+                if (e.which == 3) {
+                    this.closePopout();
+                    this.openPopout(e.target);
+                }
             };
             else document.querySelector('div[aria-label="Hide Member List"]').onmousedown = () => {};
         }
