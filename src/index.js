@@ -986,6 +986,12 @@ module.exports = (Plugin, Library) => {
          * @param {HTML Element} target 
          */
         openPopout(target) {
+            // Return if in DM
+            if ([
+                1, // DM Channel type
+                3  // Group DM Channel type
+            ].includes(ChannelStore.getChannel(SelectedChannelStore.getChannelId()).type)) return;
+
             const popoutId = Popouts.openPopout(target, {
                 position: "left",
                 align: "top",
