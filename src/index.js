@@ -1,7 +1,7 @@
 module.exports = (Plugin, Library) => {
     const { DiscordClasses, DiscordClassModules, DiscordModules, DiscordSelectors, Logger, Patcher, PluginUtilities, Popouts, ReactTools, Settings, Toasts, Tooltip, WebpackModules } = Library;
 
-    const { GuildStore, React } = DiscordModules;
+    const { GuildStore, ChannelStore, SelectedChannelStore, React } = DiscordModules;
 
     const plusPath = require("plusPath.txt");
     const searchPath = require("searchPath.txt");
