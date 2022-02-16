@@ -628,7 +628,7 @@ module.exports = (() => {
         onSwitch() {
             this.resetFilter();
             this.updateMemberList();
-            this.closePopouts();
+            this.closePopout();
             this.showedWarning = false;
         }
 
@@ -1127,13 +1127,23 @@ module.exports = (() => {
         }
 
         /**
-         * Opens a popout to add roles to the filter
+         * Opens a role popout after closing the existing one.
          * @param {MouseEvent} e
          */
         handleAddButtonClick(e) {
-            this.closePopouts();
+            this.closePopout();
             
-            Popouts.openPopout(e.target, {
+            this.openPopout(e.target);
+            
+            if (e.stopPropagation) e.stopPropagation();
+        }
+
+        /**
+         * Opens a popout to add roles to the filter
+         * @param {HTML Element} target 
+         */
+        openPopout(target) {
+            const popoutId = Popouts.openPopout(target, {
                 position: "left",
                 align: "top",
                 spacing: 258,
@@ -1147,17 +1157,18 @@ module.exports = (() => {
                     });
                 }
             });
-            
-            if (e.stopPropagation) e.stopPropagation();
+
+            this.currentPopoutId = popoutId;
         }
 
         /**
-         * Closes all open Role Filter popouts.
+         * Closes an open Role Filter popout, if one exists.
          */
-        closePopouts() {
-            const openPopouts = document.querySelectorAll(`.${classes.popoutContainer}`);
-
-            openPopouts.forEach(openPopout => openPopout.remove());
+        closePopout() {
+            if (this.currentPopoutId != null) {
+                Popouts.closePopout(this.currentPopoutId);
+                this.currentPopoutId = null;
+            }
         }
         
         /**
