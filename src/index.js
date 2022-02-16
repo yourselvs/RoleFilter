@@ -429,12 +429,15 @@ module.exports = (Plugin, Library) => {
             this.initializeCss();
             this.patchRoles();
             this.patchMemberList();
+            this.patchMemberListButton();
             this.patchRoleMention();
 
             document.addEventListener("click", this.handleRolePillClick, true);
         }
 
         onStop() {
+            // Unpatch right-click on memberlist button.
+            document.querySelector('div[aria-label="Hide Member List"]').onmousedown = () => {};
 
             document.removeEventListener.bind(document, "click", this.handleRolePillClick, true);
             
@@ -519,6 +522,15 @@ module.exports = (Plugin, Library) => {
             if(!roleClass.includes("interactive")) {
                 DiscordClassModules.PopoutRoles["role"] += " interactive";
             }
+        }
+
+        /**
+         * Adds right-click to filter option to member list button.
+         */
+        patchMemberListButton() {
+            document.querySelector('div[aria-label="Hide Member List"]').onmousedown = (e) => {
+                if (e.which == 3) this.openPopout(e.target);
+            };
         }
 
         /**
