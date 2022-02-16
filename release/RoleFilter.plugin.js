@@ -635,6 +635,7 @@ module.exports = (() => {
         onSwitch() {
             this.resetFilter();
             this.updateMemberList();
+            this.patchMemberListButton();
             this.closePopout();
             this.showedWarning = false;
         }
@@ -1197,14 +1198,6 @@ module.exports = (() => {
             this.removeRoleFromFilter(roleId);
             if (this.filter.roles.length === 0) this.resetFilter();
             this.updateMemberList();
-        }
-
-        /**
-         * Makes sure the memberlist button is patched eacetime the channel is switched.
-         */
-        observer(e) {
-            if (!e.addedNodes.length || !(e.addedNodes[0] instanceof Element)) return;
-            if (e.addedNodes[0].querySelector(DiscordSelectors.Textarea.inner)) this.patchMemberListButton();
         }
     };
 };
