@@ -7,7 +7,7 @@
             "github_username": "yourselvs",
             "twitter_username": ""
         }],
-        "version": "1.2.0",
+        "version": "1.2.1",
         "description": "Filter the user list by selected roles.",
         "github": "https://github.com/yourselvs/RoleFilter",
         "github_raw": "https://raw.githubusercontent.com/yourselvs/RoleFilter/main/release/RoleFilter.plugin.js"
@@ -16,6 +16,7 @@
         {
             "title": "New Feature: Add Any Role", 
             "items": [
+                "1.2.1 FIX: Fixed memory leak when multiple popouts were opened",
                 "Filter on any role by clicking the plus button at the top of the member's list.", 
                 "Use the search bar to search for a specific role.",
                 "This button can be removed completely by toggling it in the settings."
