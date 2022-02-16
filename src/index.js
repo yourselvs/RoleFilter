@@ -431,19 +431,20 @@ module.exports = (Plugin, Library) => {
             this.patchMemberList();
             this.patchMemberListButton();
             this.patchRoleMention();
-
+            
             document.addEventListener("click", this.handleRolePillClick, true);
         }
 
         onStop() {
-            // Unpatch right-click on memberlist button.
-            document.querySelector('div[aria-label="Hide Member List"]').onmousedown = () => {};
 
             document.removeEventListener.bind(document, "click", this.handleRolePillClick, true);
             
             Patcher.unpatchAll();
 
             this.updateMemberList();
+
+            // Unpatch right-click on memberlist button.
+            this.patchMemberListButton(false);
             
             const roleClass = DiscordClassModules.PopoutRoles["role"];
 
@@ -527,10 +528,11 @@ module.exports = (Plugin, Library) => {
         /**
          * Adds right-click to filter option to member list button.
          */
-        patchMemberListButton() {
-            document.querySelector('div[aria-label="Hide Member List"]').onmousedown = (e) => {
+        patchMemberListButton(patch = true) {
+            if (patch) document.querySelector('div[aria-label="Hide Member List"]').onmousedown = (e) => {
                 if (e.which == 3) this.openPopout(e.target);
             };
+            else document.querySelector('div[aria-label="Hide Member List"]').onmousedown = () => {};
         }
 
         /**
@@ -1020,6 +1022,15 @@ module.exports = (Plugin, Library) => {
             this.removeRoleFromFilter(roleId);
             if (this.filter.roles.length === 0) this.resetFilter();
             this.updateMemberList();
+        }
+
+        
+        /**
+         * Makes sure the memberlist button is patched eacetime the channel is switched.
+         */
+         observer(e) {
+            if (!e.addedNodes.length || !(e.addedNodes[0] instanceof Element)) return;
+            if (e.addedNodes[0].querySelector(DiscordSelectors.Textarea.inner)) this.patchMemberListButton();
         }
     };
 };

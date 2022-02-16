@@ -14,12 +14,9 @@
     },
     "changelog": [
         {
-            "title": "New Feature: Right Click the 'Hide Member List' button to show the filter popout.", 
+            "title": "New Feature: Right Click the 'Hide Member List' button.", 
             "items": [
-                "1.2.1 FIX: Fixed memory leak when multiple popouts were opened",
-                "Filter on any role by clicking the plus button at the top of the member's list.", 
-                "Use the search bar to search for a specific role.",
-                "This button can be removed completely by toggling it in the settings."
+                "1.2.2: You can now right click the 'Hide Member List' button to show the filter popuot."
             ]
         },
         {
