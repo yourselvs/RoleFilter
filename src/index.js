@@ -1,7 +1,7 @@
 module.exports = (Plugin, Library) => {
     const { DiscordClasses, DiscordClassModules, DiscordModules, DiscordSelectors, Logger, Patcher, PluginUtilities, Popouts, ReactTools, Settings, Toasts, Tooltip, WebpackModules } = Library;
 
-    const { GuildStore, React } = DiscordModules;
+    const { GuildStore, ChannelStore, SelectedChannelStore, React } = DiscordModules;
 
     const plusPath = require("plusPath.txt");
     const searchPath = require("searchPath.txt");
@@ -429,8 +429,9 @@ module.exports = (Plugin, Library) => {
             this.initializeCss();
             this.patchRoles();
             this.patchMemberList();
+            this.patchMemberListButton();
             this.patchRoleMention();
-
+            
             document.addEventListener("click", this.handleRolePillClick, true);
         }
 
@@ -441,6 +442,9 @@ module.exports = (Plugin, Library) => {
             Patcher.unpatchAll();
 
             this.updateMemberList();
+
+            // Unpatch right-click on memberlist button.
+            this.patchMemberListButton(false);
             
             const roleClass = DiscordClassModules.PopoutRoles["role"];
 
@@ -456,6 +460,7 @@ module.exports = (Plugin, Library) => {
         onSwitch() {
             this.resetFilter();
             this.updateMemberList();
+            this.patchMemberListButton();
             this.closePopout();
             this.showedWarning = false;
         }
@@ -519,6 +524,19 @@ module.exports = (Plugin, Library) => {
             if(!roleClass.includes("interactive")) {
                 DiscordClassModules.PopoutRoles["role"] += " interactive";
             }
+        }
+
+        /**
+         * Adds right-click to filter option to member list button.
+         */
+        patchMemberListButton(patch = true) {
+            if (patch) document.querySelector('div[aria-label="Hide Member List"]').onmousedown = (e) => {
+                if (e.which == 3) {
+                    this.closePopout();
+                    this.openPopout(e.target);
+                }
+            };
+            else document.querySelector('div[aria-label="Hide Member List"]').onmousedown = () => {};
         }
 
         /**
@@ -971,6 +989,12 @@ module.exports = (Plugin, Library) => {
          * @param {HTML Element} target 
          */
         openPopout(target) {
+            // Return if in DM
+            if ([
+                1, // DM Channel type
+                3  // Group DM Channel type
+            ].includes(ChannelStore.getChannel(SelectedChannelStore.getChannelId()).type)) return;
+
             const popoutId = Popouts.openPopout(target, {
                 position: "left",
                 align: "top",
