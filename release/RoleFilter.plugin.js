@@ -156,6 +156,12 @@ module.exports = (() => {
     cursor: pointer;
 }
 
+.roleFilter-emptyList {
+    padding: 20px;
+    text-align: center;
+    color: var(--text-muted)
+}
+
 .roleFilter-btnContainer {
     width: 100%;
 }
@@ -194,6 +200,7 @@ module.exports = (() => {
         popoutContainer: "roleFilter-popoutContainer",
         listContainer: "roleFilter-listContainer",
         listOption: "roleFilter-listOption",
+        emptyList: "roleFilter-emptyList",
         searchContainer: "roleFilter-searchContainer",
         searchInput: "roleFilter-searchInput",
         btnContainer: "roleFilter-btnContainer",
@@ -451,9 +458,15 @@ module.exports = (() => {
         }
 
         render() {
+            let listChildren = this.getRoleList();
+            
+            if (listChildren.length === 0) {
+                listChildren = this.getEmptyListDisplay();
+            }
+
             return React.createElement("div", {
                 className: classes.listContainer,
-                children: this.getRoleList()
+                children: listChildren
             });
         }
 
@@ -480,7 +493,7 @@ module.exports = (() => {
                     role,
                     selected
                 })
-            });
+            }).filter(n => n);
         }
 
         /**
@@ -542,6 +555,12 @@ module.exports = (() => {
                 return true;
 
             return role.name.toLowerCase().includes(this.props.searchValue.toLowerCase());
+        }
+
+        getEmptyListDisplay() {
+            return React.createElement('div', {
+                className: classes.emptyList
+            }, "No roles found.")
         }
     }
 
@@ -741,7 +760,9 @@ module.exports = (() => {
             const RoleMention = WebpackModules.getModule(m => m && m.default.displayName === "RoleMention");
             
             Patcher.after(RoleMention, "default", (_, [props], component) => {
-                if (!component || !component.props || !props || props.type !== "mention") return;
+                if (!component || !component.props 
+                    || !props || props.type !== "mention"
+                    || !props.roleId || props.children[0] ==='@everyone') return;
 
                 const role = this.getRoleById(props.roleId);
 
@@ -982,6 +1003,9 @@ module.exports = (() => {
 
             for(const roleId in guildRoles) {
                 const guildRole = guildRoles[roleId];
+                
+                if (guildRole.name === "@everyone") continue;
+                
                 roles.push(new Role(
                     guildRole.id,
                     guildRole.name,
