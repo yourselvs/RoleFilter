@@ -7,12 +7,21 @@
             "github_username": "yourselvs",
             "twitter_username": ""
         }],
-        "version": "1.2.2",
+        "version": "1.2.3",
         "description": "Filter the user list by selected roles.",
         "github": "https://github.com/yourselvs/RoleFilter",
         "github_raw": "https://raw.githubusercontent.com/yourselvs/RoleFilter/main/release/RoleFilter.plugin.js"
     },
     "changelog": [
+        {
+            "title": "1.2.3: Tweaks and fixes",
+            "items" : [
+                "Clicking on the \"add role\" button multiple times no longer breaks the popup",
+                "\"@everyone\" is no longer counted as a role",
+                "A few console errors should no longer be occurring",
+                "General performance improvements"
+            ]
+        },
         {
             "title": "New Feature: Right Click the 'Hide Member List' button.", 
             "items": [
