@@ -261,10 +261,9 @@ module.exports = (() => {
 
         constructor(props) {
             super(props);
-            this.onClick = this.onClick.bind(this);
         }
         
-        onClick() {
+        handleClick() {
             this.props.onClick(this.props.role.id);
         }
 
@@ -272,7 +271,7 @@ module.exports = (() => {
             return React.createElement("div", {
                 className: classes.role,
                 style: {overflow: "auto"},
-                onClick: this.onClick
+                onClick: () => this.handleClick()
             },
                 React.createElement("div", {
                     className: classes.roleCircle,
@@ -381,8 +380,6 @@ module.exports = (() => {
             this.state = {
                 searchValue: null
             };
-
-            this.onSearch = this.onSearch.bind(this);
         }
 
         render() {
@@ -390,7 +387,7 @@ module.exports = (() => {
                 className: `${classes.layer} ${classes.popoutContainer}`
             },
                 React.createElement(RoleSearch, {
-                    onChange: this.onSearch
+                    onChange: (e) => this.onSearch(e)
                 }),
                 React.createElement(RoleList, {
                     onRoleSelect: this.props.onRoleSelect,
@@ -451,8 +448,6 @@ module.exports = (() => {
             this.state = {
                 selectedRoles: this.props.selectedRoles
             }
-
-            this.onRoleClick = this.onRoleClick.bind(this);
         }
 
         render() {
@@ -481,7 +476,7 @@ module.exports = (() => {
                     );
 
                 return React.createElement(RoleListOption, {
-                    onClick: this.onRoleClick,
+                    onClick: (r, s) => this.handleRoleClick(r, s),
                     role,
                     selected
                 })
@@ -493,7 +488,7 @@ module.exports = (() => {
          * @param {Role} role Role object to add to state and filter
          * @param {boolean} selected True if the role is currently selected. False otherwise
          */
-        onRoleClick(role, selected) {
+        handleRoleClick(role, selected) {
             if (selected)
                 this.deselectRole(role);
             else
@@ -558,8 +553,6 @@ module.exports = (() => {
     const RoleListOption = class RoleListOption extends React.Component {
         constructor(props) {
             super(props);
-            
-            this.onClick = this.onClick.bind(this);
         }
 
         render() {
@@ -568,11 +561,11 @@ module.exports = (() => {
                 style: {
                     color: this.props.role.color
                 },
-                onClick: this.onClick
+                onClick: () => this.handleClick()
             }, this.props.role.name);
         }
 
-        onClick() {
+        handleClick() {
             this.props.onClick(this.props.role, this.props.selected);
         }
     }
@@ -585,13 +578,6 @@ module.exports = (() => {
             this.defaultSettings.showAddRoleButton = true;
             this.defaultSettings.showLargeChannelWarning = true;
 
-            this.handleRolePillClick = this.handleRolePillClick.bind(this);
-            this.handleAddButtonClick = this.handleAddButtonClick.bind(this);
-            this.handleRoleFilterClick = this.handleRoleFilterClick.bind(this);
-
-            this.getRoleById = this.getRoleById.bind(this);
-            this.addRoleToFilter = this.addRoleToFilter.bind(this);
-
             this.useAnd = true;
         }
         
@@ -602,12 +588,12 @@ module.exports = (() => {
             this.patchMemberListButton();
             this.patchRoleMention();
             
-            document.addEventListener("click", this.handleRolePillClick, true);
+            document.addEventListener("click", (e) => this.handleRolePillClick(e), true);
         }
 
         onStop() {
 
-            document.removeEventListener.bind(document, "click", this.handleRolePillClick, true);
+            document.removeEventListener.bind(document, "click", (e) => this.handleRolePillClick(e), true);
             
             Patcher.unpatchAll();
 
@@ -1083,8 +1069,8 @@ module.exports = (() => {
             membersListElem.props.children = [membersListElem.props.children];
 
             const roleHeader = React.createElement(RoleHeader, {
-                onAddButtonClick: this.handleAddButtonClick,
-                onRoleClick: this.handleRoleFilterClick,
+                onAddButtonClick: (event) => this.handleAddButtonClick(event),
+                onRoleClick: (roleId) => this.handleRoleFilterClick(roleId),
                 filter: this.filter,
                 showAddRoleButton: this.settings.showAddRoleButton
             });
@@ -1096,12 +1082,12 @@ module.exports = (() => {
         /**
          * Handles all click events. 
          * Filters out event if target's classes don't match role classes.
-         * @param {HTML element} target The element to handle the click event on
+         * @param {MouseEvent} event The element to handle the click event on
          */
-        handleRolePillClick(e) {
+        handleRolePillClick(event) {
             let roleId = "";
             
-            const target = e.target;
+            const target = event.target;
 
             if(target.classList.contains("roleFilter")) {
                 return;
@@ -1117,7 +1103,7 @@ module.exports = (() => {
                 return;
             }
 
-            if (e.stopPropogation) e.stopPropogation();
+            if (event.stopPropogation) event.stopPropogation();
 
             // replace non-numerical characters in the id
             roleId = roleId.replace(/\D/g,"");
@@ -1147,14 +1133,14 @@ module.exports = (() => {
 
         /**
          * Opens a role popout after closing the existing one.
-         * @param {MouseEvent} e
+         * @param {MouseEvent} event
          */
-        handleAddButtonClick(e) {
+        handleAddButtonClick(event) {
             this.closePopout();
             
-            this.openPopout(e.target);
+            this.openPopout(event.target);
             
-            if (e.stopPropagation) e.stopPropagation();
+            if (event.stopPropagation) event.stopPropagation();
         }
 
         /**
@@ -1175,7 +1161,7 @@ module.exports = (() => {
                 animation: Popouts.AnimationTypes.TRANSLATE,
                 render: () => {
                     return React.createElement(RolePopout, {
-                        onRoleSelect: this.addRoleToFilter,
+                        onRoleSelect: (role) => this.addRoleToFilter(role),
                         onRoleDeselect: (role) => this.removeRoleFromFilter(role.id),
                         guildRoles: this.getAllRoles(),
                         selectedRoles: this.filter && this.filter.roles
