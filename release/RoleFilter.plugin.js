@@ -4,7 +4,7 @@
  * @authorId 110574243023966208
  * @description Filter the user list by selected roles.
  * @authorLink https://github.com/yourselvs
- * @version 1.2.2
+ * @version 1.2.3
  * @website https://github.com/yourselvs/RoleFilter
  * @source https://raw.githubusercontent.com/yourselvs/RoleFilter/main/release/RoleFilter.plugin.js
  * @updateUrl https://raw.githubusercontent.com/yourselvs/RoleFilter/main/release/RoleFilter.plugin.js
@@ -34,7 +34,7 @@
 @else@*/
 
 module.exports = (() => {
-    const config = {"info":{"name":"Role Filter","authors":[{"name":"yourselvs","discord_id":"110574243023966208","github_username":"yourselvs","twitter_username":""}],"version":"1.2.2","description":"Filter the user list by selected roles.","github":"https://github.com/yourselvs/RoleFilter","github_raw":"https://raw.githubusercontent.com/yourselvs/RoleFilter/main/release/RoleFilter.plugin.js"},"changelog":[{"title": "New Feature: Right Click the 'Hide Member List' button.","items": ["1.2.2: You can now right click the 'Hide Member List' button to show the filter popuot."]},{"title":"New Feature: Add Any Role","items":["1.2.1 FIX: Fixed memory leak when multiple popouts were opened","Filter on any role by clicking the plus button at the top of the member's list.","Use the search bar to search for a specific role.","This button can be removed completely by toggling it in the settings."]},{"title":"Toggle Roles","type":"improved","items":["Clicking on a role mention or a user's role will toggle, rather than just adding to the filter.","You no longer need to click in the filter area to de-select a role."]},{"title":"New Settings Panel","type":"improved","items":["A settings panel for the plugin has been added.","The warning for large channels and the new button can both be disabled."]},{"title":"Less spam on big servers","type":"fixed","items":["Role Filter has limitations on channels with more than 100 members.","When you filter in a large channel, a warning message will pop up only once, rather than every time you click on a role.","The warning message shows again once you change server/channel."]}],"main":"index.js"};
+    const config = {"info":{"name":"Role Filter","authors":[{"name":"yourselvs","discord_id":"110574243023966208","github_username":"yourselvs","twitter_username":""}],"version":"1.2.3","description":"Filter the user list by selected roles.","github":"https://github.com/yourselvs/RoleFilter","github_raw":"https://raw.githubusercontent.com/yourselvs/RoleFilter/main/release/RoleFilter.plugin.js"},"changelog":[{"title":"1.2.3: Tweaks and fixes","items":["Clicking on the \"add role\" button multiple times no longer breaks the popup","\"@everyone\" is no longer counted as a role","A few console errors should no longer be occurring","General performance improvements"]},{"title":"New Feature: Right Click the 'Hide Member List' button.","items":["1.2.2: You can now right click the 'Hide Member List' button to show the filter popuot."]},{"title":"New Feature: Add Any Role","items":["1.2.1 FIX: Fixed memory leak when multiple popouts were opened","Filter on any role by clicking the plus button at the top of the member's list.","Use the search bar to search for a specific role.","This button can be removed completely by toggling it in the settings."]},{"title":"Toggle Roles","type":"improved","items":["Clicking on a role mention or a user's role will toggle, rather than just adding to the filter.","You no longer need to click in the filter area to de-select a role."]},{"title":"New Settings Panel","type":"improved","items":["A settings panel for the plugin has been added.","The warning for large channels and the new button can both be disabled."]},{"title":"Less spam on big servers","type":"fixed","items":["Role Filter has limitations on channels with more than 100 members.","When you filter in a large channel, a warning message will pop up only once, rather than every time you click on a role.","The warning message shows again once you change server/channel."]}],"main":"index.js"};
 
     return !global.ZeresPluginLibrary ? class {
         constructor() {this._config = config;}
@@ -156,6 +156,12 @@ module.exports = (() => {
     cursor: pointer;
 }
 
+.roleFilter-emptyList {
+    padding: 20px;
+    text-align: center;
+    color: var(--text-muted)
+}
+
 .roleFilter-btnContainer {
     width: 100%;
 }
@@ -194,6 +200,7 @@ module.exports = (() => {
         popoutContainer: "roleFilter-popoutContainer",
         listContainer: "roleFilter-listContainer",
         listOption: "roleFilter-listOption",
+        emptyList: "roleFilter-emptyList",
         searchContainer: "roleFilter-searchContainer",
         searchInput: "roleFilter-searchInput",
         btnContainer: "roleFilter-btnContainer",
@@ -261,10 +268,9 @@ module.exports = (() => {
 
         constructor(props) {
             super(props);
-            this.onClick = this.onClick.bind(this);
         }
         
-        onClick() {
+        handleClick() {
             this.props.onClick(this.props.role.id);
         }
 
@@ -272,7 +278,7 @@ module.exports = (() => {
             return React.createElement("div", {
                 className: classes.role,
                 style: {overflow: "auto"},
-                onClick: this.onClick
+                onClick: () => this.handleClick()
             },
                 React.createElement("div", {
                     className: classes.roleCircle,
@@ -321,11 +327,6 @@ module.exports = (() => {
     const AddRoleButton = class AddRoleButton extends React.Component {
         constructor(props) {
             super(props);
-            this.onClick = this.onClick.bind(this);
-        }
-        
-        onClick(e) {
-            this.props.onClick(e);
         }
 
         render() {
@@ -336,7 +337,7 @@ module.exports = (() => {
             }, 
                 React.createElement("svg", {
                     className: classes.addBtn,
-                    onClick: this.onClick
+                    onClick: (e) => this.props.onClick(e)
                 },
                     React.createElement("path", {
                         className: classes.addBtnPath,
@@ -386,8 +387,6 @@ module.exports = (() => {
             this.state = {
                 searchValue: null
             };
-
-            this.onSearch = this.onSearch.bind(this);
         }
 
         render() {
@@ -395,7 +394,7 @@ module.exports = (() => {
                 className: `${classes.layer} ${classes.popoutContainer}`
             },
                 React.createElement(RoleSearch, {
-                    onChange: this.onSearch
+                    onChange: (e) => this.onSearch(e)
                 }),
                 React.createElement(RoleList, {
                     onRoleSelect: this.props.onRoleSelect,
@@ -456,14 +455,18 @@ module.exports = (() => {
             this.state = {
                 selectedRoles: this.props.selectedRoles
             }
-
-            this.onRoleClick = this.onRoleClick.bind(this);
         }
 
         render() {
+            let listChildren = this.getRoleList();
+            
+            if (listChildren.length === 0) {
+                listChildren = this.getEmptyListDisplay();
+            }
+
             return React.createElement("div", {
                 className: classes.listContainer,
-                children: this.getRoleList()
+                children: listChildren
             });
         }
 
@@ -486,11 +489,11 @@ module.exports = (() => {
                     );
 
                 return React.createElement(RoleListOption, {
-                    onClick: this.onRoleClick,
+                    onClick: (r, s) => this.handleRoleClick(r, s),
                     role,
                     selected
                 })
-            });
+            }).filter(n => n);
         }
 
         /**
@@ -498,7 +501,7 @@ module.exports = (() => {
          * @param {Role} role Role object to add to state and filter
          * @param {boolean} selected True if the role is currently selected. False otherwise
          */
-        onRoleClick(role, selected) {
+        handleRoleClick(role, selected) {
             if (selected)
                 this.deselectRole(role);
             else
@@ -553,6 +556,12 @@ module.exports = (() => {
 
             return role.name.toLowerCase().includes(this.props.searchValue.toLowerCase());
         }
+
+        getEmptyListDisplay() {
+            return React.createElement('div', {
+                className: classes.emptyList
+            }, "No roles found.")
+        }
     }
 
     /**
@@ -563,8 +572,6 @@ module.exports = (() => {
     const RoleListOption = class RoleListOption extends React.Component {
         constructor(props) {
             super(props);
-            
-            this.onClick = this.onClick.bind(this);
         }
 
         render() {
@@ -573,11 +580,11 @@ module.exports = (() => {
                 style: {
                     color: this.props.role.color
                 },
-                onClick: this.onClick
+                onClick: () => this.handleClick()
             }, this.props.role.name);
         }
 
-        onClick() {
+        handleClick() {
             this.props.onClick(this.props.role, this.props.selected);
         }
     }
@@ -590,13 +597,6 @@ module.exports = (() => {
             this.defaultSettings.showAddRoleButton = true;
             this.defaultSettings.showLargeChannelWarning = true;
 
-            this.handleRolePillClick = this.handleRolePillClick.bind(this);
-            this.handleAddButtonClick = this.handleAddButtonClick.bind(this);
-            this.handleRoleFilterClick = this.handleRoleFilterClick.bind(this);
-
-            this.getRoleById = this.getRoleById.bind(this);
-            this.addRoleToFilter = this.addRoleToFilter.bind(this);
-
             this.useAnd = true;
         }
         
@@ -607,12 +607,12 @@ module.exports = (() => {
             this.patchMemberListButton();
             this.patchRoleMention();
             
-            document.addEventListener("click", this.handleRolePillClick, true);
+            document.addEventListener("click", (e) => this.handleRolePillClick(e), true);
         }
 
         onStop() {
 
-            document.removeEventListener.bind(document, "click", this.handleRolePillClick, true);
+            document.removeEventListener.bind(document, "click", (e) => this.handleRolePillClick(e), true);
             
             Patcher.unpatchAll();
 
@@ -705,10 +705,16 @@ module.exports = (() => {
          * Adds right-click to filter option to member list button.
          */
         patchMemberListButton(patch = true) {
-            if (patch) document.querySelector('div[aria-label="Hide Member List"]').onmousedown = (e) => {
-                if (e.which == 3) this.openPopout(e.target);
+            const elem = document.querySelector('div[aria-label="Hide Member List"]');
+            if (!elem) return;
+
+            if (patch) elem.onmousedown = (e) => {
+                if (e.which == 3) {
+                    this.closePopout();
+                    this.openPopout(e.target);
+                }
             };
-            else document.querySelector('div[aria-label="Hide Member List"]').onmousedown = () => {};
+            else elem.onmousedown = () => {};
         }
 
         /**
@@ -754,7 +760,9 @@ module.exports = (() => {
             const RoleMention = WebpackModules.getModule(m => m && m.default.displayName === "RoleMention");
             
             Patcher.after(RoleMention, "default", (_, [props], component) => {
-                if (!component || !component.props || !props || props.type !== "mention") return;
+                if (!component || !component.props 
+                    || !props || props.type !== "mention"
+                    || !props.roleId || props.children[0] ==='@everyone') return;
 
                 const role = this.getRoleById(props.roleId);
 
@@ -995,6 +1003,9 @@ module.exports = (() => {
 
             for(const roleId in guildRoles) {
                 const guildRole = guildRoles[roleId];
+                
+                if (guildRole.name === "@everyone") continue;
+                
                 roles.push(new Role(
                     guildRole.id,
                     guildRole.name,
@@ -1082,8 +1093,8 @@ module.exports = (() => {
             membersListElem.props.children = [membersListElem.props.children];
 
             const roleHeader = React.createElement(RoleHeader, {
-                onAddButtonClick: this.handleAddButtonClick,
-                onRoleClick: this.handleRoleFilterClick,
+                onAddButtonClick: (event) => this.handleAddButtonClick(event),
+                onRoleClick: (roleId) => this.handleRoleFilterClick(roleId),
                 filter: this.filter,
                 showAddRoleButton: this.settings.showAddRoleButton
             });
@@ -1095,12 +1106,12 @@ module.exports = (() => {
         /**
          * Handles all click events. 
          * Filters out event if target's classes don't match role classes.
-         * @param {HTML element} target The element to handle the click event on
+         * @param {MouseEvent} event The element to handle the click event on
          */
-        handleRolePillClick(e) {
+        handleRolePillClick(event) {
             let roleId = "";
             
-            const target = e.target;
+            const target = event.target;
 
             if(target.classList.contains("roleFilter")) {
                 return;
@@ -1116,7 +1127,7 @@ module.exports = (() => {
                 return;
             }
 
-            if (e.stopPropogation) e.stopPropogation();
+            if (event.stopPropogation) event.stopPropogation();
 
             // replace non-numerical characters in the id
             roleId = roleId.replace(/\D/g,"");
@@ -1146,14 +1157,14 @@ module.exports = (() => {
 
         /**
          * Opens a role popout after closing the existing one.
-         * @param {MouseEvent} e
+         * @param {MouseEvent} event
          */
-        handleAddButtonClick(e) {
+        handleAddButtonClick(event) {
             this.closePopout();
             
-            this.openPopout(e.target);
+            this.openPopout(event.target);
             
-            if (e.stopPropagation) e.stopPropagation();
+            if (event.stopPropagation) event.stopPropagation();
         }
 
         /**
@@ -1174,7 +1185,7 @@ module.exports = (() => {
                 animation: Popouts.AnimationTypes.TRANSLATE,
                 render: () => {
                     return React.createElement(RolePopout, {
-                        onRoleSelect: this.addRoleToFilter,
+                        onRoleSelect: (role) => this.addRoleToFilter(role),
                         onRoleDeselect: (role) => this.removeRoleFromFilter(role.id),
                         guildRoles: this.getAllRoles(),
                         selectedRoles: this.filter && this.filter.roles
@@ -1189,10 +1200,9 @@ module.exports = (() => {
          * Closes an open Role Filter popout, if one exists.
          */
         closePopout() {
-            if (this.currentPopoutId != null) {
-                Popouts.closePopout(this.currentPopoutId);
-                this.currentPopoutId = null;
-            }
+            const openPopouts = document.querySelectorAll(`.${classes.popoutContainer}`);
+
+            openPopouts.forEach(openPopout => openPopout.remove());
         }
         
         /**
@@ -1200,8 +1210,8 @@ module.exports = (() => {
          * @param {string} roleId The ID of the role that was clicked on
          */
         handleRoleFilterClick(roleId) {
-            if (!this.filter) return;
             this.removeRoleFromFilter(roleId);
+            if (!this.filter) return;
             if (this.filter.roles.length === 0) this.resetFilter();
             this.updateMemberList();
         }

@@ -19,6 +19,7 @@ module.exports = (Plugin, Library) => {
         popoutContainer: "roleFilter-popoutContainer",
         listContainer: "roleFilter-listContainer",
         listOption: "roleFilter-listOption",
+        emptyList: "roleFilter-emptyList",
         searchContainer: "roleFilter-searchContainer",
         searchInput: "roleFilter-searchInput",
         btnContainer: "roleFilter-btnContainer",
@@ -86,10 +87,9 @@ module.exports = (Plugin, Library) => {
 
         constructor(props) {
             super(props);
-            this.onClick = this.onClick.bind(this);
         }
         
-        onClick() {
+        handleClick() {
             this.props.onClick(this.props.role.id);
         }
 
@@ -97,7 +97,7 @@ module.exports = (Plugin, Library) => {
             return React.createElement("div", {
                 className: classes.role,
                 style: {overflow: "auto"},
-                onClick: this.onClick
+                onClick: () => this.handleClick()
             },
                 React.createElement("div", {
                     className: classes.roleCircle,
@@ -146,11 +146,6 @@ module.exports = (Plugin, Library) => {
     const AddRoleButton = class AddRoleButton extends React.Component {
         constructor(props) {
             super(props);
-            this.onClick = this.onClick.bind(this);
-        }
-        
-        onClick(e) {
-            this.props.onClick(e);
         }
 
         render() {
@@ -161,7 +156,7 @@ module.exports = (Plugin, Library) => {
             }, 
                 React.createElement("svg", {
                     className: classes.addBtn,
-                    onClick: this.onClick
+                    onClick: (e) => this.props.onClick(e)
                 },
                     React.createElement("path", {
                         className: classes.addBtnPath,
@@ -211,8 +206,6 @@ module.exports = (Plugin, Library) => {
             this.state = {
                 searchValue: null
             };
-
-            this.onSearch = this.onSearch.bind(this);
         }
 
         render() {
@@ -220,7 +213,7 @@ module.exports = (Plugin, Library) => {
                 className: `${classes.layer} ${classes.popoutContainer}`
             },
                 React.createElement(RoleSearch, {
-                    onChange: this.onSearch
+                    onChange: (e) => this.onSearch(e)
                 }),
                 React.createElement(RoleList, {
                     onRoleSelect: this.props.onRoleSelect,
@@ -281,14 +274,18 @@ module.exports = (Plugin, Library) => {
             this.state = {
                 selectedRoles: this.props.selectedRoles
             }
-
-            this.onRoleClick = this.onRoleClick.bind(this);
         }
 
         render() {
+            let listChildren = this.getRoleList();
+            
+            if (listChildren.length === 0) {
+                listChildren = this.getEmptyListDisplay();
+            }
+
             return React.createElement("div", {
                 className: classes.listContainer,
-                children: this.getRoleList()
+                children: listChildren
             });
         }
 
@@ -311,11 +308,11 @@ module.exports = (Plugin, Library) => {
                     );
 
                 return React.createElement(RoleListOption, {
-                    onClick: this.onRoleClick,
+                    onClick: (r, s) => this.handleRoleClick(r, s),
                     role,
                     selected
                 })
-            });
+            }).filter(n => n);
         }
 
         /**
@@ -323,7 +320,7 @@ module.exports = (Plugin, Library) => {
          * @param {Role} role Role object to add to state and filter
          * @param {boolean} selected True if the role is currently selected. False otherwise
          */
-        onRoleClick(role, selected) {
+        handleRoleClick(role, selected) {
             if (selected)
                 this.deselectRole(role);
             else
@@ -378,6 +375,12 @@ module.exports = (Plugin, Library) => {
 
             return role.name.toLowerCase().includes(this.props.searchValue.toLowerCase());
         }
+
+        getEmptyListDisplay() {
+            return React.createElement('div', {
+                className: classes.emptyList
+            }, "No roles found.")
+        }
     }
 
     /**
@@ -388,8 +391,6 @@ module.exports = (Plugin, Library) => {
     const RoleListOption = class RoleListOption extends React.Component {
         constructor(props) {
             super(props);
-            
-            this.onClick = this.onClick.bind(this);
         }
 
         render() {
@@ -398,11 +399,11 @@ module.exports = (Plugin, Library) => {
                 style: {
                     color: this.props.role.color
                 },
-                onClick: this.onClick
+                onClick: () => this.handleClick()
             }, this.props.role.name);
         }
 
-        onClick() {
+        handleClick() {
             this.props.onClick(this.props.role, this.props.selected);
         }
     }
@@ -415,13 +416,6 @@ module.exports = (Plugin, Library) => {
             this.defaultSettings.showAddRoleButton = true;
             this.defaultSettings.showLargeChannelWarning = true;
 
-            this.handleRolePillClick = this.handleRolePillClick.bind(this);
-            this.handleAddButtonClick = this.handleAddButtonClick.bind(this);
-            this.handleRoleFilterClick = this.handleRoleFilterClick.bind(this);
-
-            this.getRoleById = this.getRoleById.bind(this);
-            this.addRoleToFilter = this.addRoleToFilter.bind(this);
-
             this.useAnd = true;
         }
         
@@ -432,12 +426,12 @@ module.exports = (Plugin, Library) => {
             this.patchMemberListButton();
             this.patchRoleMention();
             
-            document.addEventListener("click", this.handleRolePillClick, true);
+            document.addEventListener("click", (e) => this.handleRolePillClick(e), true);
         }
 
         onStop() {
 
-            document.removeEventListener.bind(document, "click", this.handleRolePillClick, true);
+            document.removeEventListener.bind(document, "click", (e) => this.handleRolePillClick(e), true);
             
             Patcher.unpatchAll();
 
@@ -530,13 +524,16 @@ module.exports = (Plugin, Library) => {
          * Adds right-click to filter option to member list button.
          */
         patchMemberListButton(patch = true) {
-            if (patch) document.querySelector('div[aria-label="Hide Member List"]').onmousedown = (e) => {
+            const elem = document.querySelector('div[aria-label="Hide Member List"]');
+            if (!elem) return;
+
+            if (patch) elem.onmousedown = (e) => {
                 if (e.which == 3) {
                     this.closePopout();
                     this.openPopout(e.target);
                 }
             };
-            else document.querySelector('div[aria-label="Hide Member List"]').onmousedown = () => {};
+            else elem.onmousedown = () => {};
         }
 
         /**
@@ -582,7 +579,9 @@ module.exports = (Plugin, Library) => {
             const RoleMention = WebpackModules.getModule(m => m && m.default.displayName === "RoleMention");
             
             Patcher.after(RoleMention, "default", (_, [props], component) => {
-                if (!component || !component.props || !props || props.type !== "mention") return;
+                if (!component || !component.props 
+                    || !props || props.type !== "mention"
+                    || !props.roleId || props.children[0] ==='@everyone') return;
 
                 const role = this.getRoleById(props.roleId);
 
@@ -823,6 +822,9 @@ module.exports = (Plugin, Library) => {
 
             for(const roleId in guildRoles) {
                 const guildRole = guildRoles[roleId];
+                
+                if (guildRole.name === "@everyone") continue;
+                
                 roles.push(new Role(
                     guildRole.id,
                     guildRole.name,
@@ -910,8 +912,8 @@ module.exports = (Plugin, Library) => {
             membersListElem.props.children = [membersListElem.props.children];
 
             const roleHeader = React.createElement(RoleHeader, {
-                onAddButtonClick: this.handleAddButtonClick,
-                onRoleClick: this.handleRoleFilterClick,
+                onAddButtonClick: (event) => this.handleAddButtonClick(event),
+                onRoleClick: (roleId) => this.handleRoleFilterClick(roleId),
                 filter: this.filter,
                 showAddRoleButton: this.settings.showAddRoleButton
             });
@@ -923,12 +925,12 @@ module.exports = (Plugin, Library) => {
         /**
          * Handles all click events. 
          * Filters out event if target's classes don't match role classes.
-         * @param {HTML element} target The element to handle the click event on
+         * @param {MouseEvent} event The element to handle the click event on
          */
-        handleRolePillClick(e) {
+        handleRolePillClick(event) {
             let roleId = "";
             
-            const target = e.target;
+            const target = event.target;
 
             if(target.classList.contains("roleFilter")) {
                 return;
@@ -944,7 +946,7 @@ module.exports = (Plugin, Library) => {
                 return;
             }
 
-            if (e.stopPropogation) e.stopPropogation();
+            if (event.stopPropogation) event.stopPropogation();
 
             // replace non-numerical characters in the id
             roleId = roleId.replace(/\D/g,"");
@@ -974,14 +976,14 @@ module.exports = (Plugin, Library) => {
 
         /**
          * Opens a role popout after closing the existing one.
-         * @param {MouseEvent} e
+         * @param {MouseEvent} event
          */
-        handleAddButtonClick(e) {
+        handleAddButtonClick(event) {
             this.closePopout();
             
-            this.openPopout(e.target);
+            this.openPopout(event.target);
             
-            if (e.stopPropagation) e.stopPropagation();
+            if (event.stopPropagation) event.stopPropagation();
         }
 
         /**
@@ -1002,7 +1004,7 @@ module.exports = (Plugin, Library) => {
                 animation: Popouts.AnimationTypes.TRANSLATE,
                 render: () => {
                     return React.createElement(RolePopout, {
-                        onRoleSelect: this.addRoleToFilter,
+                        onRoleSelect: (role) => this.addRoleToFilter(role),
                         onRoleDeselect: (role) => this.removeRoleFromFilter(role.id),
                         guildRoles: this.getAllRoles(),
                         selectedRoles: this.filter && this.filter.roles
@@ -1017,10 +1019,9 @@ module.exports = (Plugin, Library) => {
          * Closes an open Role Filter popout, if one exists.
          */
         closePopout() {
-            if (this.currentPopoutId != null) {
-                Popouts.closePopout(this.currentPopoutId);
-                this.currentPopoutId = null;
-            }
+            const openPopouts = document.querySelectorAll(`.${classes.popoutContainer}`);
+
+            openPopouts.forEach(openPopout => openPopout.remove());
         }
         
         /**
@@ -1028,8 +1029,8 @@ module.exports = (Plugin, Library) => {
          * @param {string} roleId The ID of the role that was clicked on
          */
         handleRoleFilterClick(roleId) {
-            if (!this.filter) return;
             this.removeRoleFromFilter(roleId);
+            if (!this.filter) return;
             if (this.filter.roles.length === 0) this.resetFilter();
             this.updateMemberList();
         }
