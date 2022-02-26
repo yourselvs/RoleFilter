@@ -1210,8 +1210,8 @@ module.exports = (() => {
          * @param {string} roleId The ID of the role that was clicked on
          */
         handleRoleFilterClick(roleId) {
-            if (!this.filter) return;
             this.removeRoleFromFilter(roleId);
+            if (!this.filter) return;
             if (this.filter.roles.length === 0) this.resetFilter();
             this.updateMemberList();
         }
