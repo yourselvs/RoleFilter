@@ -4,7 +4,7 @@
  * @authorId 110574243023966208
  * @description Filter the user list by selected roles.
  * @authorLink https://github.com/yourselvs
- * @version 1.2.2
+ * @version 1.2.3
  * @website https://github.com/yourselvs/RoleFilter
  * @source https://raw.githubusercontent.com/yourselvs/RoleFilter/main/release/RoleFilter.plugin.js
  * @updateUrl https://raw.githubusercontent.com/yourselvs/RoleFilter/main/release/RoleFilter.plugin.js
@@ -34,7 +34,7 @@
 @else@*/
 
 module.exports = (() => {
-    const config = {"info":{"name":"Role Filter","authors":[{"name":"yourselvs","discord_id":"110574243023966208","github_username":"yourselvs","twitter_username":""}],"version":"1.2.2","description":"Filter the user list by selected roles.","github":"https://github.com/yourselvs/RoleFilter","github_raw":"https://raw.githubusercontent.com/yourselvs/RoleFilter/main/release/RoleFilter.plugin.js"},"changelog":[{"title": "New Feature: Right Click the 'Hide Member List' button.","items": ["1.2.2: You can now right click the 'Hide Member List' button to show the filter popuot."]},{"title":"New Feature: Add Any Role","items":["1.2.1 FIX: Fixed memory leak when multiple popouts were opened","Filter on any role by clicking the plus button at the top of the member's list.","Use the search bar to search for a specific role.","This button can be removed completely by toggling it in the settings."]},{"title":"Toggle Roles","type":"improved","items":["Clicking on a role mention or a user's role will toggle, rather than just adding to the filter.","You no longer need to click in the filter area to de-select a role."]},{"title":"New Settings Panel","type":"improved","items":["A settings panel for the plugin has been added.","The warning for large channels and the new button can both be disabled."]},{"title":"Less spam on big servers","type":"fixed","items":["Role Filter has limitations on channels with more than 100 members.","When you filter in a large channel, a warning message will pop up only once, rather than every time you click on a role.","The warning message shows again once you change server/channel."]}],"main":"index.js"};
+    const config = {"info":{"name":"Role Filter","authors":[{"name":"yourselvs","discord_id":"110574243023966208","github_username":"yourselvs","twitter_username":""}],"version":"1.2.2","description":"Filter the user list by selected roles.","github":"https://github.com/yourselvs/RoleFilter","github_raw":"https://raw.githubusercontent.com/yourselvs/RoleFilter/main/release/RoleFilter.plugin.js"},"changelog":[{"title":"New Feature: Right Click the 'Hide Member List' button.","items":["1.2.2: You can now right click the 'Hide Member List' button to show the filter popuot."]},{"title":"New Feature: Add Any Role","items":["1.2.1 FIX: Fixed memory leak when multiple popouts were opened","Filter on any role by clicking the plus button at the top of the member's list.","Use the search bar to search for a specific role.","This button can be removed completely by toggling it in the settings."]},{"title":"Toggle Roles","type":"improved","items":["Clicking on a role mention or a user's role will toggle, rather than just adding to the filter.","You no longer need to click in the filter area to de-select a role."]},{"title":"New Settings Panel","type":"improved","items":["A settings panel for the plugin has been added.","The warning for large channels and the new button can both be disabled."]},{"title":"Less spam on big servers","type":"fixed","items":["Role Filter has limitations on channels with more than 100 members.","When you filter in a large channel, a warning message will pop up only once, rather than every time you click on a role.","The warning message shows again once you change server/channel."]}],"main":"index.js"};
 
     return !global.ZeresPluginLibrary ? class {
         constructor() {this._config = config;}
@@ -321,11 +321,6 @@ module.exports = (() => {
     const AddRoleButton = class AddRoleButton extends React.Component {
         constructor(props) {
             super(props);
-            this.onClick = this.onClick.bind(this);
-        }
-        
-        onClick(e) {
-            this.props.onClick(e);
         }
 
         render() {
@@ -336,7 +331,7 @@ module.exports = (() => {
             }, 
                 React.createElement("svg", {
                     className: classes.addBtn,
-                    onClick: this.onClick
+                    onClick: (e) => this.props.onClick(e)
                 },
                     React.createElement("path", {
                         className: classes.addBtnPath,
@@ -705,10 +700,16 @@ module.exports = (() => {
          * Adds right-click to filter option to member list button.
          */
         patchMemberListButton(patch = true) {
-            if (patch) document.querySelector('div[aria-label="Hide Member List"]').onmousedown = (e) => {
-                if (e.which == 3) this.openPopout(e.target);
+            const elem = document.querySelector('div[aria-label="Hide Member List"]');
+            if (!elem) return;
+
+            if (patch) elem.onmousedown = (e) => {
+                if (e.which == 3) {
+                    this.closePopout();
+                    this.openPopout(e.target);
+                }
             };
-            else document.querySelector('div[aria-label="Hide Member List"]').onmousedown = () => {};
+            else elem.onmousedown = () => {};
         }
 
         /**
@@ -1189,10 +1190,9 @@ module.exports = (() => {
          * Closes an open Role Filter popout, if one exists.
          */
         closePopout() {
-            if (this.currentPopoutId != null) {
-                Popouts.closePopout(this.currentPopoutId);
-                this.currentPopoutId = null;
-            }
+            const openPopouts = document.querySelectorAll(`.${classes.popoutContainer}`);
+
+            openPopouts.forEach(openPopout => openPopout.remove());
         }
         
         /**

@@ -146,11 +146,6 @@ module.exports = (Plugin, Library) => {
     const AddRoleButton = class AddRoleButton extends React.Component {
         constructor(props) {
             super(props);
-            this.onClick = this.onClick.bind(this);
-        }
-        
-        onClick(e) {
-            this.props.onClick(e);
         }
 
         render() {
@@ -161,7 +156,7 @@ module.exports = (Plugin, Library) => {
             }, 
                 React.createElement("svg", {
                     className: classes.addBtn,
-                    onClick: this.onClick
+                    onClick: (e) => this.props.onClick(e)
                 },
                     React.createElement("path", {
                         className: classes.addBtnPath,
@@ -530,13 +525,16 @@ module.exports = (Plugin, Library) => {
          * Adds right-click to filter option to member list button.
          */
         patchMemberListButton(patch = true) {
-            if (patch) document.querySelector('div[aria-label="Hide Member List"]').onmousedown = (e) => {
+            const elem = document.querySelector('div[aria-label="Hide Member List"]');
+            if (!elem) return;
+
+            if (patch) elem.onmousedown = (e) => {
                 if (e.which == 3) {
                     this.closePopout();
                     this.openPopout(e.target);
                 }
             };
-            else document.querySelector('div[aria-label="Hide Member List"]').onmousedown = () => {};
+            else elem.onmousedown = () => {};
         }
 
         /**
@@ -1017,10 +1015,9 @@ module.exports = (Plugin, Library) => {
          * Closes an open Role Filter popout, if one exists.
          */
         closePopout() {
-            if (this.currentPopoutId != null) {
-                Popouts.closePopout(this.currentPopoutId);
-                this.currentPopoutId = null;
-            }
+            const openPopouts = document.querySelectorAll(`.${classes.popoutContainer}`);
+
+            openPopouts.forEach(openPopout => openPopout.remove());
         }
         
         /**
