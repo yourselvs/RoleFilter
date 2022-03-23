@@ -34,7 +34,7 @@
 @else@*/
 
 module.exports = (() => {
-    const config = {"info":{"name":"Role Filter","authors":[{"name":"yourselvs","discord_id":"110574243023966208","github_username":"yourselvs","twitter_username":""}],"version":"1.3","description":"Filter the user list by selected roles.","github":"https://github.com/yourselvs/RoleFilter","github_raw":"https://raw.githubusercontent.com/yourselvs/RoleFilter/main/release/RoleFilter.plugin.js"},"changelog":[{"title":"Updated the \"Add Role\" button visuals","items":["The \"Add Role\" button style has been updated to match Discord's styling","Right clicking now opens the popout menu as well","The popout will always open in the right place"]}],"main":"index.js"};
+    const config = {"info":{"name":"Role Filter","authors":[{"name":"yourselvs","discord_id":"110574243023966208","github_username":"yourselvs","twitter_username":""}],"version":"1.3","description":"Filter the user list by selected roles.","github":"https://github.com/yourselvs/RoleFilter","github_raw":"https://raw.githubusercontent.com/yourselvs/RoleFilter/main/release/RoleFilter.plugin.js"},"changelog":[{"title":"Updated the \"Add Role\" button visuals","items":["The \"Add Role\" button style has been updated to match Discord's styling","Right clicking now opens the popout menu as well","The popout will always open in the right place"]},{"title":"Performance Fix","type":"fixed","items":["The click listeners are properly disabled","Repeatedly disabling and re-enabling the plugin will no longer tank your performance when clicking on a user's role"]}],"main":"index.js"};
 
     return !global.ZeresPluginLibrary ? class {
         constructor() {this._config = config;}
