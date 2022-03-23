@@ -158,19 +158,21 @@ module.exports = (() => {
 .roleFilter-emptyList {
     padding: 20px;
     text-align: center;
-    color: var(--text-muted)
+    color: var(--text-muted);
 }
 
 .roleFilter-btnContainer {
-    width: 100%;
+    background-color: var(--background-floating);
+    cursor: pointer;
+    transition: 50ms ease-out;
 }
 
-.roleFilter-btnPadding {
-    padding-bottom: 6px;
+.roleFilter-btnContainer:hover {
+    background-color: var(--brand-experiment);
 }
 
-.roleFilter-role {
-    margin: 4px 4px 0px 0px;
+.roleFilter-btnContainer:hover .roleFilter-addBtnPath {
+    fill: var(--interactive-hover);
 }
 
 .roleFilter-searchIcon {
@@ -202,9 +204,9 @@ module.exports = (() => {
         emptyList: "roleFilter-emptyList",
         searchContainer: "roleFilter-searchContainer",
         searchInput: "roleFilter-searchInput",
-        btnContainer: DiscordClassModules.PopoutRoles.addButton,
+        btnContainer: `${DiscordClassModules.PopoutRoles.addButton} roleFilter-btnContainer`,
         btnPadding: "roleFilter-btnPadding",
-        addBtn: DiscordClassModules.PopoutRoles.addButtonIcon,
+        addBtn: `${DiscordClassModules.PopoutRoles.addButtonIcon} roleFilter-addBtn`,
         addBtnPath: "roleFilter-addBtnPath",
         searchIcon: "roleFilter-searchIcon",
         searchPath: "roleFilter-searchPath"
@@ -321,7 +323,6 @@ module.exports = (() => {
 
     /**
      * @property {(e) => void} onClick Called when the add button is clicked
-     * @property {boolean} usePadding
      */
     const AddRoleButton = class AddRoleButton extends React.Component {
         constructor(props) {
@@ -329,18 +330,16 @@ module.exports = (() => {
         }
 
         render() {
-            let btnContainerClass = `${classes.btnContainer} ${this.props.usePadding && classes.btnPadding}`;
-            
             return React.createElement("div", {
-                className: btnContainerClass
+                className: classes.btnContainer,
+                onClick: (e) => this.props.onClick(e)
             }, 
                 React.createElement("svg", {
                     className: classes.addBtn,
                     ariaHidden: true,
                     width: "24",
                     height: "24",
-                    viewBox: "0 0 24 24",
-                    onClick: (e) => this.props.onClick(e)
+                    viewBox: "0 0 24 24"
                 },
                     React.createElement("path", {
                         className: classes.addBtnPath,
@@ -366,8 +365,7 @@ module.exports = (() => {
                 className: containerClass
             },
                 this.props.showAddRoleButton ? React.createElement(AddRoleButton, {
-                    onClick: this.props.onAddButtonClick,
-                    usePadding: !!this.props.filter
+                    onClick: this.props.onAddButtonClick
                 }) : null,
                 React.createElement(RoleFilterList, {
                     filter: this.props.filter,

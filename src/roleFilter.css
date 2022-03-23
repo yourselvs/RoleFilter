@@ -92,19 +92,21 @@
 .roleFilter-emptyList {
     padding: 20px;
     text-align: center;
-    color: var(--text-muted)
+    color: var(--text-muted);
 }
 
 .roleFilter-btnContainer {
-    width: 100%;
+    background-color: var(--background-floating);
+    cursor: pointer;
+    transition: 50ms ease-out;
 }
 
-.roleFilter-btnPadding {
-    padding-bottom: 6px;
+.roleFilter-btnContainer:hover {
+    background-color: var(--brand-experiment);
 }
 
-.roleFilter-role {
-    margin: 4px 4px 0px 0px;
+.roleFilter-btnContainer:hover .roleFilter-addBtnPath {
+    fill: var(--interactive-hover);
 }
 
 .roleFilter-searchIcon {

@@ -22,9 +22,9 @@ module.exports = (Plugin, Library) => {
         emptyList: "roleFilter-emptyList",
         searchContainer: "roleFilter-searchContainer",
         searchInput: "roleFilter-searchInput",
-        btnContainer: DiscordClassModules.PopoutRoles.addButton,
+        btnContainer: `${DiscordClassModules.PopoutRoles.addButton} roleFilter-btnContainer`,
         btnPadding: "roleFilter-btnPadding",
-        addBtn: DiscordClassModules.PopoutRoles.addButtonIcon,
+        addBtn: `${DiscordClassModules.PopoutRoles.addButtonIcon} roleFilter-addBtn`,
         addBtnPath: "roleFilter-addBtnPath",
         searchIcon: "roleFilter-searchIcon",
         searchPath: "roleFilter-searchPath"
@@ -141,7 +141,6 @@ module.exports = (Plugin, Library) => {
 
     /**
      * @property {(e) => void} onClick Called when the add button is clicked
-     * @property {boolean} usePadding
      */
     const AddRoleButton = class AddRoleButton extends React.Component {
         constructor(props) {
@@ -149,18 +148,16 @@ module.exports = (Plugin, Library) => {
         }
 
         render() {
-            let btnContainerClass = `${classes.btnContainer} ${this.props.usePadding && classes.btnPadding}`;
-            
             return React.createElement("div", {
-                className: btnContainerClass
+                className: classes.btnContainer,
+                onClick: (e) => this.props.onClick(e)
             }, 
                 React.createElement("svg", {
                     className: classes.addBtn,
                     ariaHidden: true,
                     width: "24",
                     height: "24",
-                    viewBox: "0 0 24 24",
-                    onClick: (e) => this.props.onClick(e)
+                    viewBox: "0 0 24 24"
                 },
                     React.createElement("path", {
                         className: classes.addBtnPath,
@@ -186,8 +183,7 @@ module.exports = (Plugin, Library) => {
                 className: containerClass
             },
                 this.props.showAddRoleButton ? React.createElement(AddRoleButton, {
-                    onClick: this.props.onAddButtonClick,
-                    usePadding: !!this.props.filter
+                    onClick: this.props.onAddButtonClick
                 }) : null,
                 React.createElement(RoleFilterList, {
                     filter: this.props.filter,
