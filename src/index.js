@@ -1,5 +1,5 @@
 module.exports = (Plugin, Library) => {
-    const { DiscordClasses, DiscordClassModules, DiscordModules, DiscordSelectors, Logger, Patcher, PluginUtilities, Popouts, ReactTools, Settings, Toasts, Tooltip, WebpackModules } = Library;
+    const { DiscordClassModules, DiscordModules, DiscordSelectors, Patcher, PluginUtilities, Popouts, ReactTools, Settings, Toasts, Tooltip, WebpackModules } = Library;
 
     const { GuildStore, ChannelStore, SelectedChannelStore, React } = DiscordModules;
 
@@ -22,9 +22,9 @@ module.exports = (Plugin, Library) => {
         emptyList: "roleFilter-emptyList",
         searchContainer: "roleFilter-searchContainer",
         searchInput: "roleFilter-searchInput",
-        btnContainer: "roleFilter-btnContainer",
+        btnContainer: `${DiscordClassModules.PopoutRoles.addButton} roleFilter-btnContainer`,
         btnPadding: "roleFilter-btnPadding",
-        addBtn: "roleFilter-addBtn",
+        addBtn: `${DiscordClassModules.PopoutRoles.addButtonIcon} roleFilter-addBtn`,
         addBtnPath: "roleFilter-addBtnPath",
         searchIcon: "roleFilter-searchIcon",
         searchPath: "roleFilter-searchPath"
@@ -141,7 +141,6 @@ module.exports = (Plugin, Library) => {
 
     /**
      * @property {(e) => void} onClick Called when the add button is clicked
-     * @property {boolean} usePadding
      */
     const AddRoleButton = class AddRoleButton extends React.Component {
         constructor(props) {
@@ -149,14 +148,17 @@ module.exports = (Plugin, Library) => {
         }
 
         render() {
-            let btnContainerClass = `${classes.btnContainer} ${this.props.usePadding && classes.btnPadding}`;
-            
             return React.createElement("div", {
-                className: btnContainerClass
+                className: classes.btnContainer,
+                onClick: (e) => this.props.onClick(e),
+                onContextMenu: (e) => this.props.onClick(e)
             }, 
                 React.createElement("svg", {
                     className: classes.addBtn,
-                    onClick: (e) => this.props.onClick(e)
+                    ariaHidden: true,
+                    width: "24",
+                    height: "24",
+                    viewBox: "0 0 24 24"
                 },
                     React.createElement("path", {
                         className: classes.addBtnPath,
@@ -175,15 +177,13 @@ module.exports = (Plugin, Library) => {
      */
     const RoleHeader = class RoleHeader extends React.Component {
         render() {
-            const showPadding = !!(this.props.showAddRoleButton || this.props.filter);
-            const containerClass = `${classes.roleRoot} ${showPadding && classes.header}`;
+            const containerClass = `${classes.roleRoot} ${classes.header}`;
 
             return React.createElement("div", {
                 className: containerClass
             },
                 this.props.showAddRoleButton ? React.createElement(AddRoleButton, {
-                    onClick: this.props.onAddButtonClick,
-                    usePadding: !!this.props.filter
+                    onClick: this.props.onAddButtonClick
                 }) : null,
                 React.createElement(RoleFilterList, {
                     filter: this.props.filter,
@@ -417,6 +417,8 @@ module.exports = (Plugin, Library) => {
             this.defaultSettings.showLargeChannelWarning = true;
 
             this.useAnd = true;
+
+            this.handleRolePillClick = this.handleRolePillClick.bind(this);
         }
         
         onStart() {
@@ -426,12 +428,11 @@ module.exports = (Plugin, Library) => {
             this.patchMemberListButton();
             this.patchRoleMention();
             
-            document.addEventListener("click", (e) => this.handleRolePillClick(e), true);
+            document.addEventListener("click", this.handleRolePillClick, true);
         }
 
         onStop() {
-
-            document.removeEventListener.bind(document, "click", (e) => this.handleRolePillClick(e), true);
+            document.removeEventListener("click", this.handleRolePillClick, true);
             
             Patcher.unpatchAll();
 
@@ -530,7 +531,7 @@ module.exports = (Plugin, Library) => {
             if (patch) elem.onmousedown = (e) => {
                 if (e.which == 3) {
                     this.closePopout();
-                    this.openPopout(e.target);
+                    this.openPopout(e.target, 'svg');
                 }
             };
             else elem.onmousedown = () => {};
@@ -988,19 +989,26 @@ module.exports = (Plugin, Library) => {
 
         /**
          * Opens a popout to add roles to the filter
-         * @param {HTML Element} target 
+         * @param {HTML Element} target The target element to open the popout next to
+         * @param {string} tagTarget The html tag name to search for
          */
-        openPopout(target) {
+        openPopout(target, tagTarget = 'div') {
             // Return if in DM
             if ([
                 1, // DM Channel type
                 3  // Group DM Channel type
             ].includes(ChannelStore.getChannel(SelectedChannelStore.getChannelId()).type)) return;
 
+            // If a child element is clicked on, popout would open in wrong place
+            // Go up in parent tree until target tag is reached
+            while(target.tagName.toLowerCase() !== tagTarget) {
+                target = target.parentElement;
+            }
+
             const popoutId = Popouts.openPopout(target, {
                 position: "left",
                 align: "top",
-                spacing: 258,
+                spacing: 263,
                 animation: Popouts.AnimationTypes.TRANSLATE,
                 render: () => {
                     return React.createElement(RolePopout, {

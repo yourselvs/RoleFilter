@@ -4,7 +4,7 @@
 } 
 
 .roleFilter-header {
-    padding: 22px 8px 0px 16px;
+    padding: 12px 8px 0px 16px;
 }
 
 .roleFilter-addBtn { 
@@ -19,8 +19,7 @@
 }
 
 .roleFilter-addBtnPath {
-    transform: scale(0.03125) rotate(45deg);
-    transform-origin: 8px 0px;
+    fill: var(--interactive-normal)
 }
 
 .roleFilter-popoutContainer {
@@ -93,19 +92,25 @@
 .roleFilter-emptyList {
     padding: 20px;
     text-align: center;
-    color: var(--text-muted)
+    color: var(--text-muted);
 }
 
 .roleFilter-btnContainer {
-    width: 100%;
+    background-color: var(--background-tertiary);
+    cursor: pointer;
+    transition: 50ms ease-out;
 }
 
-.roleFilter-btnPadding {
-    padding-bottom: 6px;
+.roleFilter-btnContainer:hover {
+    background-color: var(--brand-experiment);
+}
+
+.roleFilter-btnContainer:hover .roleFilter-addBtnPath {
+    fill: var(--interactive-hover);
 }
 
 .roleFilter-role {
-    margin: 4px 4px 0px 0px;
+    background-color: var(--background-tertiary);
 }
 
 .roleFilter-searchIcon {
@@ -120,4 +125,10 @@
 .roleFilter-searchPath {
     transform: scale(1.13);
     transform-origin: 16px 4px;
+}
+
+/* When this file is imported into the plugin, it resolves correctly */
+.${DiscordClassModules.MemberList.membersGroup}:first-of-type {
+    padding-top: 10px;
+    height: 26px;
 }

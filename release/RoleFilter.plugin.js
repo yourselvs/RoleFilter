@@ -4,7 +4,7 @@
  * @authorId 110574243023966208
  * @description Filter the user list by selected roles.
  * @authorLink https://github.com/yourselvs
- * @version 1.2.3
+ * @version 1.3
  * @website https://github.com/yourselvs/RoleFilter
  * @source https://raw.githubusercontent.com/yourselvs/RoleFilter/main/release/RoleFilter.plugin.js
  * @updateUrl https://raw.githubusercontent.com/yourselvs/RoleFilter/main/release/RoleFilter.plugin.js
@@ -34,7 +34,7 @@
 @else@*/
 
 module.exports = (() => {
-    const config = {"info":{"name":"Role Filter","authors":[{"name":"yourselvs","discord_id":"110574243023966208","github_username":"yourselvs","twitter_username":""}],"version":"1.2.3","description":"Filter the user list by selected roles.","github":"https://github.com/yourselvs/RoleFilter","github_raw":"https://raw.githubusercontent.com/yourselvs/RoleFilter/main/release/RoleFilter.plugin.js"},"changelog":[{"title":"1.2.3: Tweaks and fixes","items":["Clicking on the \"add role\" button multiple times no longer breaks the popup","\"@everyone\" is no longer counted as a role","A few console errors should no longer be occurring","General performance improvements"]},{"title":"New Feature: Right Click the 'Hide Member List' button.","items":["1.2.2: You can now right click the 'Hide Member List' button to show the filter popuot."]},{"title":"New Feature: Add Any Role","items":["1.2.1 FIX: Fixed memory leak when multiple popouts were opened","Filter on any role by clicking the plus button at the top of the member's list.","Use the search bar to search for a specific role.","This button can be removed completely by toggling it in the settings."]},{"title":"Toggle Roles","type":"improved","items":["Clicking on a role mention or a user's role will toggle, rather than just adding to the filter.","You no longer need to click in the filter area to de-select a role."]},{"title":"New Settings Panel","type":"improved","items":["A settings panel for the plugin has been added.","The warning for large channels and the new button can both be disabled."]},{"title":"Less spam on big servers","type":"fixed","items":["Role Filter has limitations on channels with more than 100 members.","When you filter in a large channel, a warning message will pop up only once, rather than every time you click on a role.","The warning message shows again once you change server/channel."]}],"main":"index.js"};
+    const config = {"info":{"name":"Role Filter","authors":[{"name":"yourselvs","discord_id":"110574243023966208","github_username":"yourselvs","twitter_username":""}],"version":"1.3","description":"Filter the user list by selected roles.","github":"https://github.com/yourselvs/RoleFilter","github_raw":"https://raw.githubusercontent.com/yourselvs/RoleFilter/main/release/RoleFilter.plugin.js"},"changelog":[{"title":"Updated the \"Add Role\" button visuals","items":["The \"Add Role\" button style has been updated to match Discord's styling","Right clicking now opens the popout menu as well","The popout will always open in the right place"]}],"main":"index.js"};
 
     return !global.ZeresPluginLibrary ? class {
         constructor() {this._config = config;}
@@ -58,11 +58,11 @@ module.exports = (() => {
         stop() {}
     } : (([Plugin, Api]) => {
         const plugin = (Plugin, Library) => {
-    const { DiscordClasses, DiscordClassModules, DiscordModules, DiscordSelectors, Logger, Patcher, PluginUtilities, Popouts, ReactTools, Settings, Toasts, Tooltip, WebpackModules } = Library;
+    const { DiscordClassModules, DiscordModules, DiscordSelectors, Patcher, PluginUtilities, Popouts, ReactTools, Settings, Toasts, Tooltip, WebpackModules } = Library;
 
     const { GuildStore, ChannelStore, SelectedChannelStore, React } = DiscordModules;
 
-    const plusPath = `M 256.00,0.00 C 114.60,0.00 0.00,114.60 0.00,256.00 0.00,397.40 114.60,512.00 256.00,512.00 397.40,512.00 512.00,397.40 512.00,256.00 512.00,114.60 397.40,0.00 256.00,0.00 Z M 377.30,316.50 C 385.70,324.90 385.70,338.50 377.30,346.90 377.30,346.90 346.90,377.30 346.90,377.30 338.50,385.70 324.90,385.70 316.50,377.30 316.50,377.30 255.70,316.50 255.70,316.50 255.70,316.50 194.90,377.30 194.90,377.30 186.50,385.70 172.90,385.70 164.50,377.30 164.50,377.30 134.00,346.90 134.00,346.90 125.60,338.50 125.60,324.90 134.00,316.50 134.00,316.50 194.80,255.70 194.80,255.70 194.80,255.70 134.00,194.80 134.00,194.80 125.60,186.40 125.60,172.80 134.00,164.40 134.00,164.40 164.40,134.00 164.40,134.00 172.80,125.60 186.40,125.60 194.80,134.00 194.80,134.00 255.60,194.80 255.60,194.80 255.60,194.80 316.40,134.00 316.40,134.00 324.80,125.60 338.40,125.60 346.80,134.00 346.80,134.00 377.20,164.40 377.20,164.40 385.60,172.80 385.60,186.40 377.20,194.80 377.20,194.80 316.40,255.60 316.40,255.60 316.40,255.60 377.30,316.50 377.30,316.50 Z`;
+    const plusPath = `M 20 11.1111H12.8889V4H11.1111V11.1111H4V12.8889H11.1111V20H12.8889V12.8889H20V11.1111 Z`;
     const searchPath = `M3.60091481,7.20297313 C3.60091481,5.20983419 5.20983419,3.60091481 7.20297313,3.60091481 C9.19611206,3.60091481 10.8050314,5.20983419 10.8050314,7.20297313 C10.8050314,9.19611206 9.19611206,10.8050314 7.20297313,10.8050314 C5.20983419,10.8050314 3.60091481,9.19611206 3.60091481,7.20297313 Z M12.0057176,10.8050314 L11.3733562,10.8050314 L11.1492281,10.5889079 C11.9336764,9.67638651 12.4059463,8.49170955 12.4059463,7.20297313 C12.4059463,4.32933105 10.0766152,2 7.20297313,2 C4.32933105,2 2,4.32933105 2,7.20297313 C2,10.0766152 4.32933105,12.4059463 7.20297313,12.4059463 C8.49170955,12.4059463 9.67638651,11.9336764 10.5889079,11.1492281 L10.8050314,11.3733562 L10.8050314,12.0057176 L14.8073185,16 L16,14.8073185 L12.2102538,11.0099776 L12.0057176,10.8050314 Z`;
     const roleFilterCss = `/* Prevent the scrollbar from rendering while the filter is active */
 .roleFilterWrap::-webkit-scrollbar { 
@@ -70,7 +70,7 @@ module.exports = (() => {
 } 
 
 .roleFilter-header {
-    padding: 22px 8px 0px 16px;
+    padding: 12px 8px 0px 16px;
 }
 
 .roleFilter-addBtn { 
@@ -85,8 +85,7 @@ module.exports = (() => {
 }
 
 .roleFilter-addBtnPath {
-    transform: scale(0.03125) rotate(45deg);
-    transform-origin: 8px 0px;
+    fill: var(--interactive-normal)
 }
 
 .roleFilter-popoutContainer {
@@ -159,19 +158,25 @@ module.exports = (() => {
 .roleFilter-emptyList {
     padding: 20px;
     text-align: center;
-    color: var(--text-muted)
+    color: var(--text-muted);
 }
 
 .roleFilter-btnContainer {
-    width: 100%;
+    background-color: var(--background-tertiary);
+    cursor: pointer;
+    transition: 50ms ease-out;
 }
 
-.roleFilter-btnPadding {
-    padding-bottom: 6px;
+.roleFilter-btnContainer:hover {
+    background-color: var(--brand-experiment);
+}
+
+.roleFilter-btnContainer:hover .roleFilter-addBtnPath {
+    fill: var(--interactive-hover);
 }
 
 .roleFilter-role {
-    margin: 4px 4px 0px 0px;
+    background-color: var(--background-tertiary);
 }
 
 .roleFilter-searchIcon {
@@ -186,6 +191,12 @@ module.exports = (() => {
 .roleFilter-searchPath {
     transform: scale(1.13);
     transform-origin: 16px 4px;
+}
+
+/* When this file is imported into the plugin, it resolves correctly */
+.${DiscordClassModules.MemberList.membersGroup}:first-of-type {
+    padding-top: 10px;
+    height: 26px;
 }`;
 
     const Lists = WebpackModules.getByProps("ListThin");
@@ -203,9 +214,9 @@ module.exports = (() => {
         emptyList: "roleFilter-emptyList",
         searchContainer: "roleFilter-searchContainer",
         searchInput: "roleFilter-searchInput",
-        btnContainer: "roleFilter-btnContainer",
+        btnContainer: `${DiscordClassModules.PopoutRoles.addButton} roleFilter-btnContainer`,
         btnPadding: "roleFilter-btnPadding",
-        addBtn: "roleFilter-addBtn",
+        addBtn: `${DiscordClassModules.PopoutRoles.addButtonIcon} roleFilter-addBtn`,
         addBtnPath: "roleFilter-addBtnPath",
         searchIcon: "roleFilter-searchIcon",
         searchPath: "roleFilter-searchPath"
@@ -322,7 +333,6 @@ module.exports = (() => {
 
     /**
      * @property {(e) => void} onClick Called when the add button is clicked
-     * @property {boolean} usePadding
      */
     const AddRoleButton = class AddRoleButton extends React.Component {
         constructor(props) {
@@ -330,14 +340,17 @@ module.exports = (() => {
         }
 
         render() {
-            let btnContainerClass = `${classes.btnContainer} ${this.props.usePadding && classes.btnPadding}`;
-            
             return React.createElement("div", {
-                className: btnContainerClass
+                className: classes.btnContainer,
+                onClick: (e) => this.props.onClick(e),
+                onContextMenu: (e) => this.props.onClick(e)
             }, 
                 React.createElement("svg", {
                     className: classes.addBtn,
-                    onClick: (e) => this.props.onClick(e)
+                    ariaHidden: true,
+                    width: "24",
+                    height: "24",
+                    viewBox: "0 0 24 24"
                 },
                     React.createElement("path", {
                         className: classes.addBtnPath,
@@ -356,15 +369,13 @@ module.exports = (() => {
      */
     const RoleHeader = class RoleHeader extends React.Component {
         render() {
-            const showPadding = !!(this.props.showAddRoleButton || this.props.filter);
-            const containerClass = `${classes.roleRoot} ${showPadding && classes.header}`;
+            const containerClass = `${classes.roleRoot} ${classes.header}`;
 
             return React.createElement("div", {
                 className: containerClass
             },
                 this.props.showAddRoleButton ? React.createElement(AddRoleButton, {
-                    onClick: this.props.onAddButtonClick,
-                    usePadding: !!this.props.filter
+                    onClick: this.props.onAddButtonClick
                 }) : null,
                 React.createElement(RoleFilterList, {
                     filter: this.props.filter,
@@ -598,6 +609,8 @@ module.exports = (() => {
             this.defaultSettings.showLargeChannelWarning = true;
 
             this.useAnd = true;
+
+            this.handleRolePillClick = this.handleRolePillClick.bind(this);
         }
         
         onStart() {
@@ -607,12 +620,11 @@ module.exports = (() => {
             this.patchMemberListButton();
             this.patchRoleMention();
             
-            document.addEventListener("click", (e) => this.handleRolePillClick(e), true);
+            document.addEventListener("click", this.handleRolePillClick, true);
         }
 
         onStop() {
-
-            document.removeEventListener.bind(document, "click", (e) => this.handleRolePillClick(e), true);
+            document.removeEventListener("click", this.handleRolePillClick, true);
             
             Patcher.unpatchAll();
 
@@ -711,7 +723,7 @@ module.exports = (() => {
             if (patch) elem.onmousedown = (e) => {
                 if (e.which == 3) {
                     this.closePopout();
-                    this.openPopout(e.target);
+                    this.openPopout(e.target, 'svg');
                 }
             };
             else elem.onmousedown = () => {};
@@ -1169,19 +1181,26 @@ module.exports = (() => {
 
         /**
          * Opens a popout to add roles to the filter
-         * @param {HTML Element} target 
+         * @param {HTML Element} target The target element to open the popout next to
+         * @param {string} tagTarget The html tag name to search for
          */
-        openPopout(target) {
+        openPopout(target, tagTarget = 'div') {
             // Return if in DM
             if ([
                 1, // DM Channel type
                 3  // Group DM Channel type
             ].includes(ChannelStore.getChannel(SelectedChannelStore.getChannelId()).type)) return;
 
+            // If a child element is clicked on, popout would open in wrong place
+            // Go up in parent tree until target tag is reached
+            while(target.tagName.toLowerCase() !== tagTarget) {
+                target = target.parentElement;
+            }
+
             const popoutId = Popouts.openPopout(target, {
                 position: "left",
                 align: "top",
-                spacing: 258,
+                spacing: 263,
                 animation: Popouts.AnimationTypes.TRANSLATE,
                 render: () => {
                     return React.createElement(RolePopout, {
