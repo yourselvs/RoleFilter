@@ -4,7 +4,7 @@
  * @authorId 110574243023966208
  * @description Filter the user list by selected roles.
  * @authorLink https://github.com/yourselvs
- * @version 1.2.3
+ * @version 1.3
  * @website https://github.com/yourselvs/RoleFilter
  * @source https://raw.githubusercontent.com/yourselvs/RoleFilter/main/release/RoleFilter.plugin.js
  * @updateUrl https://raw.githubusercontent.com/yourselvs/RoleFilter/main/release/RoleFilter.plugin.js
