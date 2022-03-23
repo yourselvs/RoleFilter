@@ -4,7 +4,7 @@
 } 
 
 .roleFilter-header {
-    padding: 22px 8px 0px 16px;
+    padding: 12px 8px 0px 16px;
 }
 
 .roleFilter-addBtn { 
@@ -125,4 +125,10 @@
 .roleFilter-searchPath {
     transform: scale(1.13);
     transform-origin: 16px 4px;
+}
+
+/* When this file is imported into the plugin, it resolves correctly */
+.${DiscordClassModules.MemberList.membersGroup}:first-of-type {
+    padding-top: 10px;
+    height: 26px;
 }

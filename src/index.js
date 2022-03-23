@@ -1,5 +1,5 @@
 module.exports = (Plugin, Library) => {
-    const { DiscordClasses, DiscordClassModules, DiscordModules, DiscordSelectors, Logger, Patcher, PluginUtilities, Popouts, ReactTools, Settings, Toasts, Tooltip, WebpackModules } = Library;
+    const { DiscordClassModules, DiscordModules, DiscordSelectors, Patcher, PluginUtilities, Popouts, ReactTools, Settings, Toasts, Tooltip, WebpackModules } = Library;
 
     const { GuildStore, ChannelStore, SelectedChannelStore, React } = DiscordModules;
 
@@ -177,8 +177,7 @@ module.exports = (Plugin, Library) => {
      */
     const RoleHeader = class RoleHeader extends React.Component {
         render() {
-            const showPadding = !!(this.props.showAddRoleButton || this.props.filter);
-            const containerClass = `${classes.roleRoot} ${showPadding && classes.header}`;
+            const containerClass = `${classes.roleRoot} ${classes.header}`;
 
             return React.createElement("div", {
                 className: containerClass
@@ -418,6 +417,8 @@ module.exports = (Plugin, Library) => {
             this.defaultSettings.showLargeChannelWarning = true;
 
             this.useAnd = true;
+
+            this.handleRolePillClick = this.handleRolePillClick.bind(this);
         }
         
         onStart() {
@@ -427,12 +428,11 @@ module.exports = (Plugin, Library) => {
             this.patchMemberListButton();
             this.patchRoleMention();
             
-            document.addEventListener("click", (e) => this.handleRolePillClick(e), true);
+            document.addEventListener("click", this.handleRolePillClick, true);
         }
 
         onStop() {
-
-            document.removeEventListener.bind(document, "click", (e) => this.handleRolePillClick(e), true);
+            document.removeEventListener("click", this.handleRolePillClick, true);
             
             Patcher.unpatchAll();
 

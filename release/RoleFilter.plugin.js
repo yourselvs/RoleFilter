@@ -58,7 +58,7 @@ module.exports = (() => {
         stop() {}
     } : (([Plugin, Api]) => {
         const plugin = (Plugin, Library) => {
-    const { DiscordClasses, DiscordClassModules, DiscordModules, DiscordSelectors, Logger, Patcher, PluginUtilities, Popouts, ReactTools, Settings, Toasts, Tooltip, WebpackModules } = Library;
+    const { DiscordClassModules, DiscordModules, DiscordSelectors, Patcher, PluginUtilities, Popouts, ReactTools, Settings, Toasts, Tooltip, WebpackModules } = Library;
 
     const { GuildStore, ChannelStore, SelectedChannelStore, React } = DiscordModules;
 
@@ -70,7 +70,7 @@ module.exports = (() => {
 } 
 
 .roleFilter-header {
-    padding: 22px 8px 0px 16px;
+    padding: 12px 8px 0px 16px;
 }
 
 .roleFilter-addBtn { 
@@ -191,6 +191,12 @@ module.exports = (() => {
 .roleFilter-searchPath {
     transform: scale(1.13);
     transform-origin: 16px 4px;
+}
+
+/* When this file is imported into the plugin, it resolves correctly */
+.${DiscordClassModules.MemberList.membersGroup}:first-of-type {
+    padding-top: 10px;
+    height: 26px;
 }`;
 
     const Lists = WebpackModules.getByProps("ListThin");
@@ -363,8 +369,7 @@ module.exports = (() => {
      */
     const RoleHeader = class RoleHeader extends React.Component {
         render() {
-            const showPadding = !!(this.props.showAddRoleButton || this.props.filter);
-            const containerClass = `${classes.roleRoot} ${showPadding && classes.header}`;
+            const containerClass = `${classes.roleRoot} ${classes.header}`;
 
             return React.createElement("div", {
                 className: containerClass
@@ -604,6 +609,8 @@ module.exports = (() => {
             this.defaultSettings.showLargeChannelWarning = true;
 
             this.useAnd = true;
+
+            this.handleRolePillClick = this.handleRolePillClick.bind(this);
         }
         
         onStart() {
@@ -613,12 +620,11 @@ module.exports = (() => {
             this.patchMemberListButton();
             this.patchRoleMention();
             
-            document.addEventListener("click", (e) => this.handleRolePillClick(e), true);
+            document.addEventListener("click", this.handleRolePillClick, true);
         }
 
         onStop() {
-
-            document.removeEventListener.bind(document, "click", (e) => this.handleRolePillClick(e), true);
+            document.removeEventListener("click", this.handleRolePillClick, true);
             
             Patcher.unpatchAll();
 
