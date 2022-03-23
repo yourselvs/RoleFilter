@@ -713,7 +713,7 @@ module.exports = (() => {
             if (patch) elem.onmousedown = (e) => {
                 if (e.which == 3) {
                     this.closePopout();
-                    this.openPopout(e.target);
+                    this.openPopout(e.target, 'svg');
                 }
             };
             else elem.onmousedown = () => {};
@@ -1171,14 +1171,21 @@ module.exports = (() => {
 
         /**
          * Opens a popout to add roles to the filter
-         * @param {HTML Element} target 
+         * @param {HTML Element} target The target element to open the popout next to
+         * @param {string} tagTarget The html tag name to search for
          */
-        openPopout(target) {
+        openPopout(target, tagTarget = 'div') {
             // Return if in DM
             if ([
                 1, // DM Channel type
                 3  // Group DM Channel type
             ].includes(ChannelStore.getChannel(SelectedChannelStore.getChannelId()).type)) return;
+
+            // If a child element is clicked on, popout would open in wrong place
+            // Go up in parent tree until target tag is reached
+            while(target.tagName.toLowerCase() !== tagTarget) {
+                target = target.parentElement;
+            }
 
             const popoutId = Popouts.openPopout(target, {
                 position: "left",
