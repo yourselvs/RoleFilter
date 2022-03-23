@@ -332,7 +332,8 @@ module.exports = (() => {
         render() {
             return React.createElement("div", {
                 className: classes.btnContainer,
-                onClick: (e) => this.props.onClick(e)
+                onClick: (e) => this.props.onClick(e),
+                onContextMenu: (e) => this.props.onClick(e)
             }, 
                 React.createElement("svg", {
                     className: classes.addBtn,
