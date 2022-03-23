@@ -1000,7 +1000,7 @@ module.exports = (Plugin, Library) => {
             const popoutId = Popouts.openPopout(target, {
                 position: "left",
                 align: "top",
-                spacing: 258,
+                spacing: 263,
                 animation: Popouts.AnimationTypes.TRANSLATE,
                 render: () => {
                     return React.createElement(RolePopout, {
