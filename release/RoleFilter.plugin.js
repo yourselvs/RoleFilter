@@ -162,7 +162,7 @@ module.exports = (() => {
 }
 
 .roleFilter-btnContainer {
-    background-color: var(--background-floating);
+    background-color: var(--background-tertiary);
     cursor: pointer;
     transition: 50ms ease-out;
 }
@@ -173,6 +173,10 @@ module.exports = (() => {
 
 .roleFilter-btnContainer:hover .roleFilter-addBtnPath {
     fill: var(--interactive-hover);
+}
+
+.roleFilter-role {
+    background-color: var(--background-tertiary);
 }
 
 .roleFilter-searchIcon {
