@@ -19,8 +19,7 @@
 }
 
 .roleFilter-addBtnPath {
-    transform: scale(0.03125) rotate(45deg);
-    transform-origin: 8px 0px;
+    fill: var(--interactive-normal)
 }
 
 .roleFilter-popoutContainer {

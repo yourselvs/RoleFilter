@@ -62,7 +62,7 @@ module.exports = (() => {
 
     const { GuildStore, ChannelStore, SelectedChannelStore, React } = DiscordModules;
 
-    const plusPath = `M 256.00,0.00 C 114.60,0.00 0.00,114.60 0.00,256.00 0.00,397.40 114.60,512.00 256.00,512.00 397.40,512.00 512.00,397.40 512.00,256.00 512.00,114.60 397.40,0.00 256.00,0.00 Z M 377.30,316.50 C 385.70,324.90 385.70,338.50 377.30,346.90 377.30,346.90 346.90,377.30 346.90,377.30 338.50,385.70 324.90,385.70 316.50,377.30 316.50,377.30 255.70,316.50 255.70,316.50 255.70,316.50 194.90,377.30 194.90,377.30 186.50,385.70 172.90,385.70 164.50,377.30 164.50,377.30 134.00,346.90 134.00,346.90 125.60,338.50 125.60,324.90 134.00,316.50 134.00,316.50 194.80,255.70 194.80,255.70 194.80,255.70 134.00,194.80 134.00,194.80 125.60,186.40 125.60,172.80 134.00,164.40 134.00,164.40 164.40,134.00 164.40,134.00 172.80,125.60 186.40,125.60 194.80,134.00 194.80,134.00 255.60,194.80 255.60,194.80 255.60,194.80 316.40,134.00 316.40,134.00 324.80,125.60 338.40,125.60 346.80,134.00 346.80,134.00 377.20,164.40 377.20,164.40 385.60,172.80 385.60,186.40 377.20,194.80 377.20,194.80 316.40,255.60 316.40,255.60 316.40,255.60 377.30,316.50 377.30,316.50 Z`;
+    const plusPath = `M 20 11.1111H12.8889V4H11.1111V11.1111H4V12.8889H11.1111V20H12.8889V12.8889H20V11.1111 Z`;
     const searchPath = `M3.60091481,7.20297313 C3.60091481,5.20983419 5.20983419,3.60091481 7.20297313,3.60091481 C9.19611206,3.60091481 10.8050314,5.20983419 10.8050314,7.20297313 C10.8050314,9.19611206 9.19611206,10.8050314 7.20297313,10.8050314 C5.20983419,10.8050314 3.60091481,9.19611206 3.60091481,7.20297313 Z M12.0057176,10.8050314 L11.3733562,10.8050314 L11.1492281,10.5889079 C11.9336764,9.67638651 12.4059463,8.49170955 12.4059463,7.20297313 C12.4059463,4.32933105 10.0766152,2 7.20297313,2 C4.32933105,2 2,4.32933105 2,7.20297313 C2,10.0766152 4.32933105,12.4059463 7.20297313,12.4059463 C8.49170955,12.4059463 9.67638651,11.9336764 10.5889079,11.1492281 L10.8050314,11.3733562 L10.8050314,12.0057176 L14.8073185,16 L16,14.8073185 L12.2102538,11.0099776 L12.0057176,10.8050314 Z`;
     const roleFilterCss = `/* Prevent the scrollbar from rendering while the filter is active */
 .roleFilterWrap::-webkit-scrollbar { 
@@ -85,8 +85,7 @@ module.exports = (() => {
 }
 
 .roleFilter-addBtnPath {
-    transform: scale(0.03125) rotate(45deg);
-    transform-origin: 8px 0px;
+    fill: var(--interactive-normal)
 }
 
 .roleFilter-popoutContainer {
@@ -203,9 +202,9 @@ module.exports = (() => {
         emptyList: "roleFilter-emptyList",
         searchContainer: "roleFilter-searchContainer",
         searchInput: "roleFilter-searchInput",
-        btnContainer: "roleFilter-btnContainer",
+        btnContainer: DiscordClassModules.PopoutRoles.addButton,
         btnPadding: "roleFilter-btnPadding",
-        addBtn: "roleFilter-addBtn",
+        addBtn: DiscordClassModules.PopoutRoles.addButtonIcon,
         addBtnPath: "roleFilter-addBtnPath",
         searchIcon: "roleFilter-searchIcon",
         searchPath: "roleFilter-searchPath"
@@ -337,6 +336,10 @@ module.exports = (() => {
             }, 
                 React.createElement("svg", {
                     className: classes.addBtn,
+                    ariaHidden: true,
+                    width: "24",
+                    height: "24",
+                    viewBox: "0 0 24 24",
                     onClick: (e) => this.props.onClick(e)
                 },
                     React.createElement("path", {

@@ -22,9 +22,9 @@ module.exports = (Plugin, Library) => {
         emptyList: "roleFilter-emptyList",
         searchContainer: "roleFilter-searchContainer",
         searchInput: "roleFilter-searchInput",
-        btnContainer: "roleFilter-btnContainer",
+        btnContainer: DiscordClassModules.PopoutRoles.addButton,
         btnPadding: "roleFilter-btnPadding",
-        addBtn: "roleFilter-addBtn",
+        addBtn: DiscordClassModules.PopoutRoles.addButtonIcon,
         addBtnPath: "roleFilter-addBtnPath",
         searchIcon: "roleFilter-searchIcon",
         searchPath: "roleFilter-searchPath"
@@ -156,6 +156,10 @@ module.exports = (Plugin, Library) => {
             }, 
                 React.createElement("svg", {
                     className: classes.addBtn,
+                    ariaHidden: true,
+                    width: "24",
+                    height: "24",
+                    viewBox: "0 0 24 24",
                     onClick: (e) => this.props.onClick(e)
                 },
                     React.createElement("path", {
