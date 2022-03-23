@@ -20,6 +20,14 @@
                 "Right clicking now opens the popout menu as well",
                 "The popout will always open in the right place"
             ]
+        },
+        {
+            "title": "Performance Fix",
+            "type": "fixed",
+            "items": [
+                "The click listeners are properly disabled",
+                "Repeatedly disabling and re-enabling the plugin will no longer tank your performance when clicking on a user's role"
+            ]
         }
     ],
     "main": "index.js"
