@@ -708,7 +708,7 @@ module.exports = (() => {
         patchRoles() {
             const roleClass = DiscordClassModules.PopoutRoles["role"];
 
-            if(!roleClass.includes("interactive")) {
+            if(!roleClass?.includes("interactive")) {
                 DiscordClassModules.PopoutRoles["role"] += " interactive";
             }
         }
